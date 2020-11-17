@@ -1,0 +1,20 @@
+CS 537 Programming Assignment ___ (Fall 2020)
+Michael Noguera (noguera@cs.wisc.edu) and Julien de Castelnau (de-castelnau@cs.wisc.edu)
+due ___ at ___pm
+
+== BUILDING ==
+
+To build, run "make" at the root of this directory. If you specify the DEBUG environment
+variable as "true" or use "make DEBUG=true", debug symbols will be included in the 
+executable as well. You can also run the scan-build target to build with the Clang static
+analyzer, and scan-view to view the generated output in a web browser.
+
+Use "make clean" to get rid of object files and executables.
+
+== USAGE ==
+
+
+== PROJECT STRUCTURE ==
+
+The functionality of ___ is divided into four logical modules, which serve the
+ following tasks:
