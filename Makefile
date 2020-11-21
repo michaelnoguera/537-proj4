@@ -9,8 +9,8 @@ all: pfsim-placeholder
 
 # build executable
 # TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-pfsim-placeholder: main.o trace_parser.o linkedlist.o
-	gcc -o pfsim-placeholder main.o trace_parser.o linkedlist.o
+pfsim-placeholder: main.o trace_parser.o linkedlist.o intervaltree.o
+	gcc -o pfsim-placeholder main.o trace_parser.o linkedlist.o intervaltree.o
 
 main.o: main.c trace_parser.h linkedlist.h
 ifeq ($(DEBUG),true)
@@ -32,6 +32,14 @@ ifeq ($(DEBUG),true)
 else
 	gcc -c -o $@ $< $(CFLAGS)
 endif
+
+intervaltree.o: intervaltree.c intervaltree.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
 
 # Run test framework
 test: all

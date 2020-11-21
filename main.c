@@ -7,6 +7,7 @@
  */
 
 #include "trace_parser.h"
+#include "intervaltree.h"
 
 #include <getopt.h>
 
@@ -55,7 +56,14 @@ int main (int argc, char** argv) {
 
     LinkedList* trace_data = first_pass(tracefile);
 
-    ll_print_as_custom(trace_data);
+    //ll_print_as_custom(trace_data);
+
+    IntervalNode* root = it_initnode(1, 5);
+    it_insert(root, 7, 8);
+    it_insert(root, 8, 10);
+    it_insert(root, 2, 4);
+
+    printf("%d", it_find(root, 6));
 
     return 0;
 }

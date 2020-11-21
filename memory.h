@@ -1,7 +1,8 @@
 // Simulates memory.
 
 #include "linkedlist.h"
-#include <bool.h>
+#include "intervaltree.h"
+#include <stdbool.h>
 
 // Represents a page from memory, identified both by a pid, vpn pair and a ppn
 // USE THIS AS VALUE IN TREES
@@ -112,11 +113,12 @@ typedef Page** VAS; // virtual address space, one per process
 enum ProcessState { NOTSTARTED, RUNNING, WAITING, FINISHED };
 typedef struct process_t {
     long pid; // identifies this process overall
-    ProcessState state;
+    enum ProcessState state;
     unsigned int waiting;
     unsigned long firstline;
     unsigned long currentline;
     unsigned long lastline;
+    IntervalNode* lineIntervals;
     VAS vas;
 } Process;
 
