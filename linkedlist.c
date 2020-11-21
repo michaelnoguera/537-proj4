@@ -215,3 +215,32 @@ inline void ll_print_as_strings(LinkedList* list) {
         printf("\x1B[2m<-\x1B[0m\x1B[95mtail\x1B[0m\n");
     }
 }
+
+// TODO: Remove. This is just for testing
+
+#include "trace_parser.h"
+
+inline void ll_print_as_custom(LinkedList* list) {
+    if (list == NULL) return;
+    printf("\x1B[4mLinkedList\x1B[0m\n");
+    printf("\t\x1B[31maddr\x1B[0m = %p\n", (void*)list);
+    printf("\t\x1B[31msize\x1B[0m = %i\n", list->size);
+
+    if (list->size > 0) {
+        // print head ptr
+        printf("\t\x1B[95mhead\x1B[0m");
+
+        // print all nodes
+        struct ll_node_t* n = list->head;
+        const int NODES_ON_LINE = 5;
+        for (int i = 0; i < list->size; i++) {
+            if (i % NODES_ON_LINE == NODES_ON_LINE - 1) printf("\n\t");
+            printf("\x1B[2m->\x1B[0m\x1B[33m%i.\x1B[0m\"\x1B[1m pid: %d start: %d end: %d \x1B[0m\"", i, ((PData*)n->value)->pid, ((PData*)n->value)->startline, ((PData*)n->value)->endline);
+
+            n = n->next;
+        }
+
+        // print tail ptr
+        printf("\x1B[2m<-\x1B[0m\x1B[95mtail\x1B[0m\n");
+    }
+}

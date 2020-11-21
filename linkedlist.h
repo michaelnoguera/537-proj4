@@ -83,4 +83,6 @@ void ll_print(LinkedList* list);
 // Debugging helper function, prints node values as strings
 void ll_print_as_strings(LinkedList* list);
 
+
+void ll_print_as_custom(LinkedList* list);
 #endif

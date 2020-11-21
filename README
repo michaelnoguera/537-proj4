@@ -16,5 +16,144 @@ Use "make clean" to get rid of object files and executables.
 
 == PROJECT STRUCTURE ==
 
-The functionality of ___ is divided into four logical modules, which serve the
- following tasks:
+The functionality of ___ is divided into four logical modules, which serve the 
+following tasks:
+
+====================================================================================
+NOTES
+
+1 | 12 6
+2 | 12 7
+3 | 12 8
+4 | 42 303
+5 | 12 1
+6 | 42 303
+
+reactivated processes come back from the i/o queue
+
+bottlenecks:
+1. having to traverse large skipped ranges
+2. traversing file numerous times (the initial pass)
+
+QUEUES:
+enum ProcessState { RUNNING, WAITING (scheduler), BLOCKED (I/O), NOTSTARTED, FINISHED };
+
+make a queue for each state:
+NOTSTARTED:
+RUNNING:
+WAITING:
+BLOCKED:
+FINISHED:
+
+PAGES
+- - ---------------------------------------------------------------------------------------------------------- - -
+    ...|ppn,pnode,vpn,pid,vnode,overhead|ppn,pnode,vpn,pid,vnode,overhead|ppn,pnode,vpn,pid,vnode,overhead|...
+- - ---------------------------------------------------------------------------------------------------------- - -
+^*page
+
+PROCESSES
+---------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------
+
+
+Process representation
+	typedef struct process_t {
+	    long pid; // identifies this process overall
+	    ProcessState state;
+	    unsigned int waiting;
+	    unsigned long firstline;
+	    unsigned long currentline;
+	    unsigned long nextknownline;
+	    unsigned long lastline;
+	    VAS vas;
+	} Process;
+Page representation
+	typedef struct page_t {
+	    long ppn;    // physical page number
+	    void* pnode; // pointer to a node in the ppn-keyed tree, used for reverse
+	                 // page resolution (ppn->page)
+	    long vpn;    // virtual page number
+	    long pid;    // process id
+	    void* vnode; // pointer to a node in the vpn-keyed tree. there is one of
+	                 // these trees per process. used for forward page resolution
+	                 // (vpn->page)
+	    void* overhead;
+	} Page;
+page table "VAS"
+PAS (arr. of pages) (inverted page table)
+run order queue - processes are sorted by starting line number (queue)
+disk I/O wait queue - for processes waiting on I/O
+
+.==============================================================================.
+| 1. FIRST PASS                                                                |
+'------------------------------------------------------------------------------'
+
+PARSER RUNS
+provide a 1d sorted (by PID) array of Processes
+
+If first time pid seen:
+	Allocate NEW process struct
+	pid = (known)
+	state = NOTSTARTED
+	firstline = (known) <set to 0 at first, then on each occurance if zero, set to line>
+	 -> if firstline was just set, enqueue proc on run order queue (automatically in order, because parsing line by line)
+	currentline = firstline
+	lastline = (known) <set to currentline's value at EOF>
+	vas = NULL
+If process already exists (this pid seen before):
+	lastline = current line in file traversal
+
+
+.==============================================================================.
+| 2. MAIN LOOP                                                                 |
+'------------------------------------------------------------------------------'
+have a queue of Process structs (know first line, last line, PID)
+main-scoped variable "curr" points to the currently running process
+mem-module static-scoped free list
+-------
+
+Is there a process at the front of the disk wait queue?
+Yes-> decrement its counter
+      if it's ready to run:
+      	1. load the ready process's page into memory
+      		- if memory is full, replace
+      	2. insert the current process to the corresponding spot in priority queue based on line number
+      	3. curr = the ready process
+No -> continue
+
+Is there a currently running process? (some variable Process curr in main)
+Yes-> continue
+No -> get the next process from the priority queue (if none next, exit)
+
+assert we have a process to run
+
+curr->currentline = get next current line
+
+Does a page struct exist?
+No -> how to create?
+Yes:
+Is the page in memory?
+Yes-> continue // page table hit
+No -> PAGE FAULT
+		Add this process to the I/O queue (& set status to WAITING)
+		needs to wait for 2ms penalty because 
+
+		ppn determined by a main-scoped counter (begin assigning in middle then alternate sides with modulo, b/c avl-backed table)
+
+assert we have a page that has been accessed
+
+tell stat to update statistics
+tell replace that there was a hit
+
+increment time counter
+
+continue to start of loop
+
+.==============================================================================.
+| 3. EXIT                                                                      |
+'------------------------------------------------------------------------------'
+print stats and exit with EXIT_SUCCESS
+
+
+

@@ -22,6 +22,8 @@ LinkedList* first_pass(FILE* trace_file) {
 
     int curr_line_number = 1;
 
+    // endline is updated everytime you see the pid in the trace file
+
     // read line into temp heap-alloc'd buffer
     // "If *lineptr is set to NULL and *n is set 0 before the call, 
     // then getline() will allocate a buffer for storing the line.  
