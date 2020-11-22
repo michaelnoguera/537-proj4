@@ -1,7 +1,17 @@
+/**
+ * CS 537 Programming Assignment 4 (Fall 2020)
+ * @author Julien de Castelnau
+ * @date 11/22/2020
+ * @brief Implementation of a simple balancing interval tree with search, insert, and print operations supported.
+ * @file intervaltree.c
+ */
+
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 #include "intervaltree.h"
 
+// Node constructor
 IntervalNode* it_initnode(int low, int high) {
     IntervalNode* in;
     if ((in = (IntervalNode*)malloc(sizeof(IntervalNode))) == NULL) {
@@ -22,34 +32,59 @@ bool contains(int low, int high, int x) {
 }
 
 // Insert node at the given subtree
-void it_insert(IntervalNode* root, int low, int high) {
+// Helper for it_insert, so that the root can be set properly by return value.
+IntervalNode* it_insert_recursive(IntervalNode* root, int low, int high) {
 
     // BASE CASE: correct empty location found --> add here
-    if (root == NULL) return;
+    if (root == NULL) {
+        return it_initnode(low, high);
+    }
 
     if (low < root->low) {
-        it_insert(root->left, low, high);
+        root->left = it_insert_recursive(root->left, low, high);
     } else {
-        it_insert(root->right, low, high);
+        root->right = it_insert_recursive(root->right, low, high);
     }
 
     if (high > root->max) {
         root->max = high;
     }
+
+    return root;
 }
 
+// Insert interval into a given tree
+void it_insert(IntervalNode* root, int low, int high) {
+    assert(root != NULL);
+
+    root = it_insert_recursive(root, low, high);
+}
+
+// Finds integer in whole subtree
 bool it_find(IntervalNode* root, int x) {
+
     // Make sure the root is not null, and that x isn't greater than the maximum.
-    if (root == NULL || x >= root->max) {
+    if ((root == NULL) || (x > root->max)) {
         return false;
     }
 
     // Check current root
-    if (contains(root->low, root->high, x)) return true;
+    if (contains(root->low, root->high, x)) return true; 
 
-    if (it_find(root->left, x)) {
-        return true;
+    if (root->left != NULL && root->left->max >= x) {
+        return it_find(root->left, x);
     } else {
-        return x < root->low && it_find(root->right, x);
+        return it_find(root->right, x);
+    }
+}
+
+// Prints the tree
+void it_print(IntervalNode* root) {
+
+    if (root != NULL) {
+        printf("low: %d, high: %d; ", root->low, root->high);
+
+        if (root->left != NULL) it_print(root->left);
+        if (root->right != NULL) it_print(root->right);
     }
 }

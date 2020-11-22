@@ -4,6 +4,9 @@
 #include "intervaltree.h"
 #include <stdbool.h>
 
+#ifndef _MEMORY_
+#define _MEMORY_
+
 // Represents a page from memory, identified both by a pid, vpn pair and a ppn
 // USE THIS AS VALUE IN TREES
 typedef struct page_t {
@@ -106,7 +109,7 @@ How to organize into a searchable group?
 typedef Page** PAS; // physical address space
 // allocated once we know the amount of pages (=pmem/pgsize)
 
-static PAS pas;
+//static PAS pas;
 
 typedef Page** VAS; // virtual address space, one per process
 
@@ -137,3 +140,5 @@ PAS* PAS_init(unsigned long size);
 
 // replace(old page, new page)
 bool replace(Page* old, Page* new);
+
+#endif

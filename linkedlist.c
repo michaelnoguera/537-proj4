@@ -218,7 +218,7 @@ inline void ll_print_as_strings(LinkedList* list) {
 
 // TODO: Remove. This is just for testing
 
-#include "trace_parser.h"
+#include "memory.h"
 
 inline void ll_print_as_custom(LinkedList* list) {
     if (list == NULL) return;
@@ -232,11 +232,11 @@ inline void ll_print_as_custom(LinkedList* list) {
 
         // print all nodes
         struct ll_node_t* n = list->head;
-        const int NODES_ON_LINE = 5;
         for (int i = 0; i < list->size; i++) {
-            if (i % NODES_ON_LINE == NODES_ON_LINE - 1) printf("\n\t");
-            printf("\x1B[2m->\x1B[0m\x1B[33m%i.\x1B[0m\"\x1B[1m pid: %d start: %d end: %d \x1B[0m\"", i, ((PData*)n->value)->pid, ((PData*)n->value)->startline, ((PData*)n->value)->endline);
-
+            
+            printf("\t\x1B[2m->\x1B[0m\x1B[33m%i.\x1B[0m\"\x1B[1m pid: %ld start: %ld end: %ld \x1B[0m, INTERVALS: ", i, ((Process*)n->value)->pid, ((Process*)n->value)->firstline, ((Process*)n->value)->lastline);
+            it_print(((Process*)n->value)->lineIntervals);
+            printf("\n");
             n = n->next;
         }
 

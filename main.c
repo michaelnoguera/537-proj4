@@ -1,7 +1,7 @@
 /** 
  * CS 537 Programming Assignment 4 (Fall 2020)
  * @authors Michael Noguera and Julien de Castelnau
- * @date 
+ * @date 11/22/2020
  * @file main.c
  * @brief parses command line arguments & handles main simulation loop
  */
@@ -51,19 +51,30 @@ int main (int argc, char** argv) {
         exit(EXIT_FAILURE);
     } else {
         tracefile = fopen(filename, "r");
+        if (tracefile == NULL) {
+            fprintf(stderr, "ERROR: error opening specified trace file\n");
+            exit(EXIT_FAILURE);
+        }
     }
-    assert(tracefile != NULL);
 
     LinkedList* trace_data = first_pass(tracefile);
 
-    //ll_print_as_custom(trace_data);
+    ll_print_as_custom(trace_data);
+
+    // Interval Tree test cases
 
     IntervalNode* root = it_initnode(1, 5);
     it_insert(root, 7, 8);
     it_insert(root, 8, 10);
     it_insert(root, 2, 4);
 
-    printf("%d", it_find(root, 6));
+    it_print(root);
+    printf("\n");
+
+    for (int i = 0; i < 15; i++) {
+        printf("interval search for %d; result: %d \n", i, it_find(root, i));
+    }
+    
 
     return 0;
 }
