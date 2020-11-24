@@ -1,5 +1,5 @@
 /**
- * CS 537 Programming Assignment 3 (Fall 2020)
+ * CS 537 Programming Assignment 4 (Fall 2020)
  * @author Michael Noguera (noguera) <mnoguera(at)wisc.edu>
  * @author Julien de Castelnau (de-castelnau) <decastelnau(at)wisc.edu>
  * @date 11/4/2020
@@ -7,8 +7,13 @@
  * @brief Implementation of heap-allocated circular singly-linked list with head
  * and tail pointers.
  *
- * Nodes store `int` values. Order is not guaranteed when multiple nodes have
- * the same value, especially after remove operations.
+ * Nodes store void values.
+ *
+ * Queue ordering is used, but not guaranteed if the middle of the list is
+ * manipulated.
+ *
+ * Use sorted functions and provide a Comparator if sorting is desired. FIFO
+ * will be maintained within groups of equal nodes.
  */
 
 #include <stdlib.h>
@@ -27,6 +32,11 @@ typedef struct linkedlist_t {
     struct ll_node_t* tail; /**< pointer to the tail of the list*/
 } LinkedList;
 
+
+/**
+ * Allocates an empty LinkedList. Free with `ll_free` or `ll_destroy`.
+ * @return new LinkedList
+ **/
 LinkedList* ll_initialize();
 
 /**
@@ -83,6 +93,31 @@ void ll_print(LinkedList* list);
 // Debugging helper function, prints node values as strings
 void ll_print_as_strings(LinkedList* list);
 
-
 void ll_print_as_custom(LinkedList* list);
+
+// Possible return values for Comparator functions
+typedef enum Comparison { LESSTHAN, EQUALTO, GREATERTHAN, ERROR } Comparison;
+
+/**
+ * Wrapper for a function that compares two node values of a given type.
+ * The function must match this interface:
+ * ```C
+ * enum Comparison { LESSTHAN, EQUALTO, GREATERTHAN, ERROR };
+ * Comparison functionName(ValueType a, ValueType b) {
+ *     // if a is less than b return LESSTHAN (0)
+ *     // if a is equal to b return EQUALTO (1)
+ *     // if a is greater than b return GREATERTHAN (2)
+ *     // upon error, return ERROR (3)
+ * }
+ * An example for `int`s is as follows:
+ * ```C
+ * Comparison compare(int a, int b) {
+ *     if (a < b) return -1;
+ *     if (a == b) return 0;
+ *     if (a > b) return 1;
+ * }
+ * ```
+ */
+typedef Comparison (*Comparator)(void*, void*);
+
 #endif
