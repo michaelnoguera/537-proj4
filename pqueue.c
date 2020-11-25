@@ -70,6 +70,7 @@ void pq_push(PQueue* pq, void* data, int priority) {
 // PQueue print, specific to Process structs.
 
 #include "memory.h"
+#include "process.h"
 
 void pqueue_print(PQueue* pq) {
     if (pq == NULL) return;
