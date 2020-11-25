@@ -64,10 +64,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    // 2. PERFORM "FIRST PASS" TO IDENTIFY PROCESSES
-    LinkedList* trace_data = first_pass(tracefile);
+    PQueue* trace_data = first_pass(tracefile);
 
-    ll_print_as_custom(trace_data);
+    pqueue_print(trace_data);
 
     // Interval Tree test cases
 
