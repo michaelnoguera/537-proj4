@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "pqueue.h"
 #include "linkedlist.h"
 #include "memory.h"
 
@@ -20,10 +21,10 @@ struct PidMap {
 
 /**
  * Runs a first pass over the specified trace file, passed using a FILE* pointer.
- * Organizes a linked list for each chunk of PID reference lines found, and merges
+ * Organizes a priority queue for each chunk of PID reference lines found, and merges
  * their intervals into an interval tree
  * 
  * @param trace_file FILE* pointing to the trace file
- * @return The linkedlist containing the synthesized process data
+ * @return The PQueue containing the synthesized process data
  */
-LinkedList* first_pass(FILE* trace_file);
+PQueue* first_pass(FILE* trace_file);

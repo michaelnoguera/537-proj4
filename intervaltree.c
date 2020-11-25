@@ -40,12 +40,14 @@ IntervalNode* it_insert_recursive(IntervalNode* root, int low, int high) {
         return it_initnode(low, high);
     }
 
+    // ELSE: try to insert in left/right tree depending on where the interval lies w.r.t to the current node
     if (low < root->low) {
         root->left = it_insert_recursive(root->left, low, high);
     } else {
         root->right = it_insert_recursive(root->right, low, high);
     }
 
+    // Update the maximum value of the subtree at root (used to make find() faster)
     if (high > root->max) {
         root->max = high;
     }
