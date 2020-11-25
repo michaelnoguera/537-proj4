@@ -1,4 +1,4 @@
-/** 
+/**
  * CS 537 Programming Assignment 4 (Fall 2020)
  * @authors Michael Noguera and Julien de Castelnau
  * @date 11/22/2020
@@ -6,12 +6,14 @@
  * @brief parses command line arguments & handles main simulation loop
  */
 
-#include "trace_parser.h"
 #include "intervaltree.h"
+#include "process.h"
+#include "trace_parser.h"
 
 #include <getopt.h>
 
-int main (int argc, char** argv) {
+int main(int argc, char** argv) {
+    // 1. PARSE ARGS AND OPEN TRACE FILE
     int opt = 0;
     int memsize = 0;
     int pagesize = 0;
@@ -39,15 +41,20 @@ int main (int argc, char** argv) {
     }
 
     if (memsize == 0) {
-        fprintf(stderr, "ERROR: must specify valid memory size (in MB) on command line\n");
+        fprintf(
+          stderr,
+          "ERROR: must specify valid memory size (in MB) on command line\n");
         exit(EXIT_FAILURE);
     }
     if (pagesize == 0) {
-        fprintf(stderr, "ERROR: must specify valid page size (in bytes) on command line\n");
+        fprintf(
+          stderr,
+          "ERROR: must specify valid page size (in bytes) on command line\n");
         exit(EXIT_FAILURE);
     }
     if (filename == NULL) {
-        fprintf(stderr, "ERROR: must specify valid file name on command line\n");
+        fprintf(stderr,
+                "ERROR: must specify valid file name on command line\n");
         exit(EXIT_FAILURE);
     } else {
         tracefile = fopen(filename, "r");
@@ -57,6 +64,7 @@ int main (int argc, char** argv) {
         }
     }
 
+    // 2. PERFORM "FIRST PASS" TO IDENTIFY PROCESSES
     LinkedList* trace_data = first_pass(tracefile);
 
     ll_print_as_custom(trace_data);
@@ -74,7 +82,17 @@ int main (int argc, char** argv) {
     for (int i = 0; i < 15; i++) {
         printf("interval search for %d; result: %d \n", i, it_find(root, i));
     }
-    
+
+
+    // 3. RUN SIMULATION
+    // bool finished = false;
+    // unsigned long clock = 0; // time in nanoseconds
+    // Process* curr = NULL; // currently running process
+
+    // while (!finished) {
+    //   if
+
+    //}
 
     return 0;
 }

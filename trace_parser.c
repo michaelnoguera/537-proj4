@@ -10,6 +10,7 @@
 
 #include "trace_parser.h"
 #include "pqueue.h"
+#include "process.h"
 #include <search.h>
 
 // credit: https://www.prevanders.net/tsearch.c

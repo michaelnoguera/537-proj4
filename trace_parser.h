@@ -11,6 +11,7 @@
 
 #include "linkedlist.h"
 #include "memory.h"
+#include "process.h"
 
 // Maps a pid to its owner process struct, for tsearch purposes
 struct PidMap {
