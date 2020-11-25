@@ -45,10 +45,41 @@ static inline LinkedListNode* llnode_init(void* value) {
 }
 
 /**
- * Inserts node at location following prev.
- * @details list must have size>0 
+ * Frees all memory from the specified `LinkedList` and pointees of the pointers
+ * it stores.
+ * If `ptr` is NULL, no operation is performed.
+ *
+ * @param ptr Pointer to LinkedList to be freed.
  */
-static inline void ll_insertAfter(LinkedList* list, LinkedListNode* prev, LinkedListNode* new) {
+void ll_free(LinkedList* ptr) {
+    if (ptr == NULL) return;
+
+    // free all nodes
+    LinkedListNode* tmp = NULL;
+    while (ptr->head != ptr->tail) {
+        tmp = ptr->head;
+        ptr->head = ptr->head->next;
+        free(tmp->value);
+        free(tmp);
+    }
+    free(ptr->tail->value);
+    free(ptr->tail);
+
+    // free list wrapper
+    free(ptr);
+}
+
+// Ignore "unused function" warnings- not all of these functions are required
+// for this module to function.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+
+/**
+ * Inserts node at location following prev.
+ * @details list must have size>0
+ */
+static inline void ll_insertAfter(LinkedList* list, LinkedListNode* prev,
+                                  LinkedListNode* new) {
     new->next = prev->next;
     prev->next = new;
     if (new->next == list->head) list->tail = new;
@@ -68,7 +99,7 @@ static inline void ll_insertAtHead(LinkedList* list, LinkedListNode* new) {
         new->next = list->head;
         list->head = new;
     }
-    
+
     list->size++;
 }
 
@@ -120,7 +151,7 @@ void llsorted_push(LinkedList* list, Comparator compare, void* value) {
 
     // EDGE CASE: only one node
     if ((*compare)(n->value, value) == EQUALTO)
-        
+
     ll_insertAfter(list, n, new);
     // Check all values until end of list or greater value encountered
     while ((*compare)(n->next->value, value) < GREATERTHAN) {
@@ -262,6 +293,11 @@ static Comparison ll_compareNodes(Comparator compare, LinkedListNode* a,
         return (*compare)(a->value, b->value);
 }
 
+// void* ll_remove(LinkedList list, Comparator compare, void* value) {
+// TODO implement this
+//    return NULL;
+//}
+
 /**
  * Converts a LinkedList into a fixed-length array of void pointers
  * @details O(N)
@@ -284,31 +320,6 @@ void** ll_to_array(LinkedList* list) {
     arr[list->size] = NULL;
 
     return arr;
-}
-
-/**
- * Frees all memory from the specified `LinkedList` and pointees of the pointers
- * it stores.
- * If `ptr` is NULL, no operation is performed.
- *
- * @param ptr Pointer to LinkedList to be freed.
- */
-void ll_free(LinkedList* ptr) {
-    if (ptr == NULL) return;
-
-    // free all nodes
-    LinkedListNode* tmp = NULL;
-    while (ptr->head != ptr->tail) {
-        tmp = ptr->head;
-        ptr->head = ptr->head->next;
-        free(tmp->value);
-        free(tmp);
-    }
-    free(ptr->tail->value);
-    free(ptr->tail);
-
-    // free list wrapper
-    free(ptr);
 }
 
 /**
@@ -395,6 +406,7 @@ inline void ll_print_as_strings(LinkedList* list) {
 // TODO: Remove. This is just for testing
 
 #include "memory.h"
+#include "process.h"
 
 inline void ll_print_as_custom(LinkedList* list) {
     if (list == NULL) return;
@@ -424,3 +436,4 @@ inline void ll_print_as_custom(LinkedList* list) {
         printf("\x1B[2m<-\x1B[0m\x1B[95mtail\x1B[0m\n");
     }
 }
+#pragma GCC diagnostic pop
