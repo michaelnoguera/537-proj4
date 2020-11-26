@@ -25,7 +25,6 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->lastline = lastline;
     p->lineIntervals = NULL;
     p->lineIntervals = lineIntervals;
-    p->vas = NULL;
 
     p->status = NOTSTARTED;
     STAILQ_INSERT_TAIL(&pq[NOTSTARTED], p, procs);
@@ -79,6 +78,68 @@ Process* Process_peek(ProcessStatus status) {
  */
 void Process_free(Process* p) {
     free(p);
+}
+
+inline PageTable* PageTable_init() {
+    PageTable pt = NULL;
+    return &pt;
+}
+
+void PageTable_compare(const void* vp1, const void* vp2) {
+    VPage* vp1_page = (VPage*)vp1;
+    VPage* vp2_page = (VPage*)vp1;
+    if (vp1_page->vpn < vp2_page->vpn) {
+        return -1;
+    } else if (vp1_page->vpn > vp2_page->vpn) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int PageTable_get(PageTable* pt, int vpn, int pid) {
+    VPage* search_query;
+    VPage* search_result;
+    VPage* temp_result;
+
+    search_query = VPage_init(vpn, pid);
+
+    if ((search_result = tfind(search_query, pt, PageTable_compare)) == NULL) {
+        VPage_free(search_query);
+        return 0;
+    } else {
+        temp_result = *(VPage**)search_result;
+        if (temp_result->inMemory) {
+            return temp_result->currentPPN;
+        } else {
+            return 0;
+        }
+        
+    }
+}
+
+int PageTable_add(PageTable* pt, int vpn, int pid, int ppn) {
+    VPage* new_page;
+    VPage* search_result;
+    VPage* temp_result;
+
+    new_page = VPage_init(vpn, pid);
+    
+    if ((search_result = tsearch(new_page, pt, PageTable_compare)) == NULL) {
+        perror("Error in page table lookup.");
+        exit(EXIT_FAILURE);
+    } else {
+        temp_result = *(VPage**)search_result;
+
+        if (temp_result != new_page) {
+            // existing node found
+            VPage_free(new_page);
+            return 1;
+        } else {
+            new_page->currentPPN = ppn;
+            return 0;
+        }
+    }
 }
 
 // TODO ProcessQueue_addPriority()

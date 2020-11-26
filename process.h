@@ -13,6 +13,8 @@ typedef enum ProcessStatus {
     NUM_OF_PROCESS_STATUSES
 } ProcessStatus;
 
+typedef void* PageTable;
+
 // Represents a process
 typedef struct process_t {
     unsigned long pid; // identifies this process overall
@@ -28,8 +30,9 @@ typedef struct process_t {
     IntervalNode* lineIntervals;
 
     // Map of VPN->PPN
-    VAS vas;
+    PageTable pageTable;
 } Process;
+
 
 struct processQueue_t *processQueue_head;
 
