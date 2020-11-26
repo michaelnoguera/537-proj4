@@ -16,6 +16,12 @@
 // credit: https://www.prevanders.net/tsearch.c
 // TODO: Email bart for attribution?
 
+struct PageTableEntry {
+    int vpn;
+    int pid;
+    int ppn;
+};
+
 // Compare two PidMap structs based on their pids. Used in tsearch()
 int compare(const void *l, const void *r) {
     const struct PidMap* lpid = l;

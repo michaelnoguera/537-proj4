@@ -9,11 +9,10 @@ all: pfsim-placeholder
 
 # build executable
 # TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-main.o: main.c trace_parser.h linkedlist.h process.h
-pfsim-placeholder: main.o trace_parser.o linkedlist.o intervaltree.o pqueue.o process.o
-	gcc -o pfsim-placeholder main.o trace_parser.o linkedlist.o intervaltree.o pqueue.o process.o
+pfsim-placeholder: main.o trace_parser.o linkedlist.o intervaltree.o pqueue.o process.o memory.o
+	gcc -o pfsim-placeholder main.o trace_parser.o linkedlist.o intervaltree.o pqueue.o process.o memory.o
 
-main.o: main.c trace_parser.h linkedlist.h pqueue.h intervaltree.h
+main.o: main.c trace_parser.h linkedlist.h pqueue.h intervaltree.h process.h memory.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else
@@ -42,6 +41,13 @@ else
 endif
 
 process.o: process.c process.h memory.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
+memory.o: memory.c memory.h process.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else

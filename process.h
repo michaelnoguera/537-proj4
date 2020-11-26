@@ -31,7 +31,7 @@ typedef struct process_t {
     VAS vas;
 } Process;
 
-struct processQueue_t* head;
+struct processQueue_t *processQueue_head;
 
 // Use of BSD tail queue based on queue(3) manpage
 // and "Minimal example of TAILQ usage out of <sys/queue.h> library"
@@ -43,6 +43,6 @@ Process* Process_init();
 void ProcessQueues_init(); // global static variable manages process states
 
 Process* Process_init(unsigned long pid, unsigned long firstline,
-                      unsigned long lastline);
+                      unsigned long lastline, IntervalNode* lineIntervals);
 
 #endif

@@ -96,7 +96,7 @@ void ll_print_as_strings(LinkedList* list);
 void ll_print_as_custom(LinkedList* list);
 
 // Possible return values for Comparator functions
-typedef enum Comparison { LESSTHAN, EQUALTO, GREATERTHAN, ERROR } Comparison;
+typedef enum Comparison { LESSTHAN=-1, EQUALTO=0, GREATERTHAN=1, ERROR } Comparison;
 
 /**
  * Wrapper for a function that compares two node values of a given type.

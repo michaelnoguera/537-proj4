@@ -86,7 +86,7 @@ run order queue - processes are sorted by starting line number (queue)
 disk I/O wait queue - for processes waiting on I/O
 
 .==============================================================================.
-| 1. FIRST PASS                                                                |
+| 1. FIRST PASS                                                          DONE! |
 '------------------------------------------------------------------------------'
 
 PARSER RUNS
@@ -104,11 +104,17 @@ If first time pid seen:
 If process already exists (this pid seen before):
 	lastline = current line in file traversal
 
+.------------------
+| Post-first-pass:
+| - Process structs created
+| - interval tree
+| - list of all processes
+'------------------
 
 .==============================================================================.
 | 2. MAIN LOOP                                                                 |
 '------------------------------------------------------------------------------'
-have a queue of Process structs (know first line, last line, PID)
+have a queue of Process structs (know first line, last line, PID) -> run queue
 main-scoped variable "curr" points to the currently running process
 mem-module static-scoped free list
 -------

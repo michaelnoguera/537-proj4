@@ -1,11 +1,12 @@
 #include "process.h"
+#include "memory.h"
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
 
 void ProcessQueues_init() {
-    STAILQ_INIT(&pq[RUNNING]);
-    STAILQ_INIT(&pq[WAITING]);
-    STAILQ_INIT(&pq[BLOCKED]);
+    STAILQ_INIT(&pq[RUNNING]); // should only ever have one element
+    STAILQ_INIT(&pq[WAITING]); // waiting for scheduler
+    STAILQ_INIT(&pq[BLOCKED]); // waiting on disk
     STAILQ_INIT(&pq[NOTSTARTED]);
     STAILQ_INIT(&pq[FINISHED]);
 }
@@ -16,24 +17,20 @@ void ProcessQueues_init() {
  * @param status
  */
 Process* Process_init(unsigned long pid, unsigned long firstline,
-                      unsigned long lastline) {
+                      unsigned long lastline, IntervalNode* lineIntervals) {
     Process* p = malloc(sizeof(Process));
     p->pid = pid;
     p->firstline = firstline;
     p->currentline = firstline;
     p->lastline = lastline;
     p->lineIntervals = NULL;
+    p->lineIntervals = lineIntervals;
     p->vas = NULL;
 
     p->status = NOTSTARTED;
     STAILQ_INSERT_TAIL(&pq[NOTSTARTED], p, procs);
 
     return p;
-}
-
-inline void Process_attachIntervalNode(Process* p,
-                                       IntervalNode* lineIntervals) {
-    p->lineIntervals = lineIntervals;
 }
 
 /**
@@ -60,6 +57,15 @@ void Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
     STAILQ_INSERT_TAIL(&pq[s2], p, procs);
 }
 
+inline static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
+    if (q == &pq[WAITING]) {
+        STAILQ_INSERT_TAIL(q, p,
+                           procs); // TODO replace with sorted insert function
+    } else {
+        STAILQ_INSERT_TAIL(q, p, procs);
+    }
+}
+
 /**
  * Peek at the status at the head of a given status queue. NULL if none present.
  */
@@ -74,3 +80,7 @@ Process* Process_peek(ProcessStatus status) {
 void Process_free(Process* p) {
     free(p);
 }
+
+// TODO ProcessQueue_addPriority()
+// iterate with STAILQ_NEXT
+// use STAILQ_INSERT_AFTER
