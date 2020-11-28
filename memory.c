@@ -1,4 +1,5 @@
 #include "memory.h"
+#include <assert.h>
 #include <stdio.h>
 #include <sys/queue.h>
 
@@ -26,6 +27,8 @@ static PPage* Page_init(unsigned long ppn) {
 
     // add page to free list
     SLIST_INSERT_HEAD(&freelist, p, node);
+
+    return p;
 }
 
 /**
@@ -53,7 +56,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-inline PPage* Memory_getPPage(unsigned long ppn) {
+static inline PPage* Memory_getPPage(unsigned long ppn) {
     return memory[ppn];
 }
 
@@ -110,12 +113,14 @@ VPage* VPage_init(unsigned long pid, unsigned long vpn) {
     }
 
     v->vpn = vpn;
-    v->overhead = Replace_initOverhead();
+    //v->overhead = Replace_initOverhead();
 
     v->inMemory = false;
+
+    return v;
 }
 
 void VPage_free(VPage* vp) {
-    Replace_freeOverhead(vp->overhead);
+    //Replace_freeOverhead(vp->overhead);
     free(vp);
 }

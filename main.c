@@ -63,10 +63,13 @@ int main(int argc, char** argv) {
             exit(EXIT_FAILURE);
         }
     }
+    ProcessQueues_init();
 
-    PQueue* trace_data = first_pass(tracefile);
+    first_pass(tracefile, getQueueByName(NOTSTARTED));
+    ProcessQueue_printQueue(NOTSTARTED);
 
-    pqueue_print(trace_data);
+
+//    pqueue_print(trace_data);
 
     // Interval Tree test cases
 
@@ -92,6 +95,8 @@ int main(int argc, char** argv) {
     //   if
 
     //}
+    
+    
 
     return 0;
 }

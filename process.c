@@ -1,5 +1,7 @@
 #include "process.h"
 #include "memory.h"
+#include <search.h>
+#include <stdio.h>
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
 
@@ -56,14 +58,71 @@ void Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
     STAILQ_INSERT_TAIL(&pq[s2], p, procs);
 }
 
-inline static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
+struct processQueue_t* getQueueByName(ProcessStatus status) {
+    return &pq[status];
+}
+
+extern inline void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[WAITING]) {
+        ProcessQueue_enqueuePriority(p, q);
         STAILQ_INSERT_TAIL(q, p,
                            procs); // TODO replace with sorted insert function
     } else {
         STAILQ_INSERT_TAIL(q, p, procs);
     }
 }
+
+inline void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
+    Process* head = STAILQ_FIRST(q);
+
+    // ASSUMES THE QUEUE IS ALREADY PRIORITY SORTED
+
+    do {
+        if (head == NULL || (p->firstline <= head->firstline)) {
+            STAILQ_INSERT_AFTER(q, p, head, procs);          
+        }
+    } while (head = STAILQ_NEXT(head, procs));
+}
+
+void ProcessQueue_printQueue(ProcessStatus q_s) {
+    Process* head = STAILQ_FIRST(&pq[q_s]);
+
+    printf("Queue: ");
+    switch (q_s) {
+        case RUNNING:
+            printf("RUNNING\n");
+            break;
+        case WAITING:
+            printf("WAITING\n");
+            break;
+        case BLOCKED:
+            printf("BLOCKED\n");
+            break;
+        case NOTSTARTED:
+            printf("NOTSTARTED\n");
+            break;
+        case FINISHED:
+            printf("FINISHED\n");
+            break;
+    }
+    if (head == NULL) printf("Empty Queue \n");
+    int i = 0;
+    do {
+        printf(
+            "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m pid: %ld start: "
+            "%ld end: %ld \x1B[0m, INTERVALS: ",
+            i,
+            head->pid, 
+            head->firstline, 
+            head->lastline);
+        it_print(head->lineIntervals);
+        i++;
+    } while (head = STAILQ_NEXT(head, procs));  
+}
+
+// TODO ProcessQueue_addPriority()
+// iterate with STAILQ_NEXT
+// use STAILQ_INSERT_AFTER
 
 /**
  * Peek at the status at the head of a given status queue. NULL if none present.
@@ -80,7 +139,7 @@ void Process_free(Process* p) {
     free(p);
 }
 
-inline PageTable* PageTable_init() {
+extern inline PageTable* PageTable_init() {
     PageTable pt = NULL;
     return &pt;
 }
@@ -97,7 +156,7 @@ void PageTable_compare(const void* vp1, const void* vp2) {
     }
 }
 
-int PageTable_get(PageTable* pt, int vpn, int pid) {
+VPage* PageTable_get(PageTable* pt, int vpn, int pid) {
     VPage* search_query;
     VPage* search_result;
     VPage* temp_result;
@@ -106,13 +165,13 @@ int PageTable_get(PageTable* pt, int vpn, int pid) {
 
     if ((search_result = tfind(search_query, pt, PageTable_compare)) == NULL) {
         VPage_free(search_query);
-        return 0;
+        return NULL;
     } else {
         temp_result = *(VPage**)search_result;
         if (temp_result->inMemory) {
-            return temp_result->currentPPN;
+            return temp_result;
         } else {
-            return 0;
+            return NULL;
         }
         
     }
@@ -142,6 +201,16 @@ int PageTable_add(PageTable* pt, int vpn, int pid, int ppn) {
     }
 }
 
-// TODO ProcessQueue_addPriority()
-// iterate with STAILQ_NEXT
-// use STAILQ_INSERT_AFTER
+int PageTable_remove(PageTable* pt, int vpn, int pid) {
+    VPage* entry_to_remove;
+
+    if ((entry_to_remove = PageTable_get(pt, vpn, pid)) == NULL) {
+        // Entry removal failed. The node was not found in the page table.
+        return 1;
+    } else {
+        // Entry was found. call tdelete() and remove
+        tdelete(entry_to_remove, pt, PageTable_compare);
+        free(entry_to_remove);
+        return 0;
+    }
+}

@@ -28,4 +28,4 @@ struct PidMap {
  * @param trace_file FILE* pointing to the trace file
  * @return The PQueue containing the synthesized process data
  */
-PQueue* first_pass(FILE* trace_file);
+void first_pass(FILE* trace_file, struct processQueue_t* q);

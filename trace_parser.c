@@ -26,17 +26,23 @@ struct PageTableEntry {
 int compare(const void *l, const void *r) {
     const struct PidMap* lpid = l;
     const struct PidMap* rpid = r;
-    if (lpid->pid == rpid->pid) return 0;
     if (lpid->pid < rpid->pid) {
         return -1;
-    } else {
+    } else if (lpid->pid > rpid->pid) {
         return 1;
+    } else {
+        return 0;
     }
 }
 
 // Pidmap constructor
 struct PidMap* make_PidMap(int pid) {
-    struct PidMap* new_PidMap = (struct PidMap*)malloc(sizeof(struct PidMap));
+    struct PidMap* new_PidMap;
+    if ((new_PidMap = (struct PidMap*)malloc(sizeof(struct PidMap))) == NULL) {
+        perror("Failed to allocate memory for new PID->Proces* map node.");
+        exit(EXIT_FAILURE);
+    }
+
     new_PidMap->pid = pid;
     new_PidMap->owner = NULL;
 
@@ -54,7 +60,7 @@ void PidMap_free(void *PidMap) {
 }
 
 // Runs a first pass over the specified trace file, passed using a FILE* pointer.
-PQueue* first_pass(FILE* trace_file) {
+void first_pass(FILE* trace_file, struct processQueue_t* q) {
     assert(trace_file != NULL);
 
     void *search_tree = 0; // search tree to store already seen PIDs in
@@ -62,7 +68,7 @@ PQueue* first_pass(FILE* trace_file) {
     struct PidMap *search_result; // temp. variable to store search result of tsearch()
     
     //LinkedList* trace_data = ll_initialize(); // linkedlist to store process data list in
-    PQueue* trace_data = pq_init();
+    //PQueue* trace_data = pq_init();
     size_t bufsize = 0; // used for getline
     char *line = NULL; // current line
 
@@ -96,18 +102,17 @@ PQueue* first_pass(FILE* trace_file) {
                 exit(EXIT_FAILURE);
             } else {
                 // The tsearch query did not fail. Was it inserted or was an existing entry found?
-                struct PidMap* re = 0;
-                re = *(struct PidMap **)search_result;
-                if (re != new_pdm) {
+                struct PidMap* existing = *(struct PidMap **)search_result;
+                if (existing != new_pdm) {
                     // An existing result was found. 
                     // Merge intervals in the current occurence and the existing occcurence,
                     // using it_insert().
                     PidMap_free(new_pdm);
 
-                    assert(re->owner != NULL);
-                    re->owner->lastline = (re->owner->lastline < curr_line_number - 1) 
-                                                    ? curr_line_number - 1 : re->owner->lastline; 
-                    it_insert(re->owner->lineIntervals, start_line_number, curr_line_number - 1);
+                    assert(existing->owner != NULL);
+                    existing->owner->lastline = (existing->owner->lastline < curr_line_number - 1) 
+                                                    ? curr_line_number - 1 : existing->owner->lastline; 
+                    it_insert(existing->owner->lineIntervals, start_line_number, curr_line_number - 1);
                    
                 } else {
                     // No existing entry existed, so it was simply added.
@@ -118,7 +123,8 @@ PQueue* first_pass(FILE* trace_file) {
                     curr_proc->lastline = curr_line_number - 1;
                     curr_proc->lineIntervals = it_initnode(start_line_number, curr_line_number - 1);
                     
-                    pq_push(trace_data, curr_proc, curr_proc->firstline);
+                    //pq_push(trace_data, curr_proc, curr_proc->firstline);
+                    ProcessQueue_enqueue(curr_proc, q);
                     new_pdm->owner=curr_proc; // update the owner of the entry in the search tree
                     
                     start_line_number = curr_line_number; // reset start_line_number
@@ -135,5 +141,5 @@ PQueue* first_pass(FILE* trace_file) {
     
     tdestroy(search_tree, PidMap_free); // destroy search tree
 
-    return trace_data;
+    //return trace_data;
 }

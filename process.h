@@ -45,7 +45,16 @@ Process* Process_init();
 
 void ProcessQueues_init(); // global static variable manages process states
 
+extern inline void ProcessQueue_enqueue(Process* p, struct processQueue_t* q);
+
+void ProcessQueue_printQueue(ProcessStatus q_s);
+
 Process* Process_init(unsigned long pid, unsigned long firstline,
                       unsigned long lastline, IntervalNode* lineIntervals);
+
+extern inline PageTable* PageTable_init();
+VPage* PageTable_get(PageTable* pt, int vpn, int pid);
+int PageTable_add(PageTable* pt, int vpn, int pid, int ppn);
+int PageTable_remove(PageTable* pt, int vpn, int pid);
 
 #endif
