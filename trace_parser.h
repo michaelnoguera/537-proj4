@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "pqueue.h"
 #include "linkedlist.h"
 #include "memory.h"
 #include "process.h"
@@ -26,6 +25,6 @@ struct PidMap {
  * their intervals into an interval tree
  * 
  * @param trace_file FILE* pointing to the trace file
- * @return The PQueue containing the synthesized process data
+ * @param The process queue to contain the synthesized process data
  */
 void first_pass(FILE* trace_file, struct processQueue_t* q);

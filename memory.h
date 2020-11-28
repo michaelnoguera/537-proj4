@@ -6,7 +6,7 @@
 #include <sys/queue.h>
 
 #ifndef _MEMORY_
-#    define _MEMORY_
+#define _MEMORY_
 
 /*
 - -
@@ -53,7 +53,7 @@ void Memory_init(size_t numberOfPhysicalPages);
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-inline PPage* Memory_getPPage(unsigned long ppn);
+PPage* Memory_getPPage(unsigned long ppn);
 
 /**
  * Accesses the virtual page with a given ppn

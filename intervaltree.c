@@ -90,3 +90,25 @@ void it_print(IntervalNode* root) {
         if (root->right != NULL) it_print(root->right);
     }
 }
+
+// todo: modify to check for VPN equal condition
+// not particularly useful at the moment since it only tells you when a process has its next line,
+// not when a page does. checking for the VPN would require being passed a FILE* though, should probably wrap around this
+int it_giveNext(IntervalNode* root, int current) {
+    // Make sure the root is not null, and that x isn't greater than the maximum.
+    // If it is, the next value in the tree is 0, i.e., current is greater than or equal to anything in the tree.
+    if ((root == NULL) || (current >= root->max)) {
+        return 0;
+    }
+
+    // Check current root
+    if (root->low <= current && current < root->high) {
+        return current+1;
+    }
+
+    if (root->left != NULL && root->left->max > current) {
+        return it_giveNext(root->left, current);
+    } else {
+        return it_giveNext(root->right, current);
+    }
+}

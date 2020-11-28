@@ -23,7 +23,7 @@ static PPage* Page_init(unsigned long ppn) {
     p->virtualPage = NULL;
 
     // place physical page in memory
-    memory[ppn] = &p;
+    memory[ppn] = p;
 
     // add page to free list
     SLIST_INSERT_HEAD(&freelist, p, node);
@@ -56,7 +56,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-static inline PPage* Memory_getPPage(unsigned long ppn) {
+PPage* Memory_getPPage(unsigned long ppn) {
     return memory[ppn];
 }
 

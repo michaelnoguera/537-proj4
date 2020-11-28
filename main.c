@@ -86,6 +86,11 @@ int main(int argc, char** argv) {
     }
 
 
+    printf("%d,", it_giveNext(root, 2));
+    printf("%d,", it_giveNext(root, 7));
+    printf("%d,", it_giveNext(root, 10));
+    printf("%d\n", it_giveNext(root, 4));
+
     // 3. RUN SIMULATION
     // bool finished = false;
     // unsigned long clock = 0; // time in nanoseconds

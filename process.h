@@ -2,7 +2,7 @@
 #include <sys/queue.h>
 
 #ifndef _PROCESS_
-#    define _PROCESS_
+#define _PROCESS_
 
 typedef enum ProcessStatus {
     RUNNING,
@@ -33,8 +33,8 @@ typedef struct process_t {
     PageTable pageTable;
 } Process;
 
-
-struct processQueue_t *processQueue_head;
+// what is this?
+// struct processQueue_t *processQueue_head;
 
 // Use of BSD tail queue based on queue(3) manpage
 // and "Minimal example of TAILQ usage out of <sys/queue.h> library"
@@ -45,14 +45,16 @@ Process* Process_init();
 
 void ProcessQueues_init(); // global static variable manages process states
 
-extern inline void ProcessQueue_enqueue(Process* p, struct processQueue_t* q);
+struct processQueue_t* getQueueByName(ProcessStatus status);
+
+void ProcessQueue_enqueue(Process* p, struct processQueue_t* q);
 
 void ProcessQueue_printQueue(ProcessStatus q_s);
 
 Process* Process_init(unsigned long pid, unsigned long firstline,
                       unsigned long lastline, IntervalNode* lineIntervals);
 
-extern inline PageTable* PageTable_init();
+PageTable* PageTable_init();
 VPage* PageTable_get(PageTable* pt, int vpn, int pid);
 int PageTable_add(PageTable* pt, int vpn, int pid, int ppn);
 int PageTable_remove(PageTable* pt, int vpn, int pid);

@@ -62,17 +62,7 @@ struct processQueue_t* getQueueByName(ProcessStatus status) {
     return &pq[status];
 }
 
-extern inline void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
-    if (q == &pq[WAITING]) {
-        ProcessQueue_enqueuePriority(p, q);
-        STAILQ_INSERT_TAIL(q, p,
-                           procs); // TODO replace with sorted insert function
-    } else {
-        STAILQ_INSERT_TAIL(q, p, procs);
-    }
-}
-
-inline void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
+void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
     Process* head = STAILQ_FIRST(q);
 
     // ASSUMES THE QUEUE IS ALREADY PRIORITY SORTED
@@ -83,6 +73,18 @@ inline void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
         }
     } while (head = STAILQ_NEXT(head, procs));
 }
+
+void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
+    if (q == &pq[WAITING]) {
+        ProcessQueue_enqueuePriority(p, q);
+        STAILQ_INSERT_TAIL(q, p,
+                           procs); // TODO replace with sorted insert function
+    } else {
+        STAILQ_INSERT_TAIL(q, p, procs);
+    }
+}
+
+
 
 void ProcessQueue_printQueue(ProcessStatus q_s) {
     Process* head = STAILQ_FIRST(&pq[q_s]);
@@ -101,6 +103,9 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
         case NOTSTARTED:
             printf("NOTSTARTED\n");
             break;
+        case NUM_OF_PROCESS_STATUSES:
+            printf("NUM_OF_PROCESS_STATUSES (not a valid queue)");
+            break;
         case FINISHED:
             printf("FINISHED\n");
             break;
@@ -116,6 +121,7 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
             head->firstline, 
             head->lastline);
         it_print(head->lineIntervals);
+        printf("\n");
         i++;
     } while (head = STAILQ_NEXT(head, procs));  
 }
@@ -139,14 +145,18 @@ void Process_free(Process* p) {
     free(p);
 }
 
-extern inline PageTable* PageTable_init() {
-    PageTable pt = NULL;
-    return &pt;
+PageTable* PageTable_init() {
+    PageTable* pt;
+    if ((pt = (PageTable*)malloc(sizeof(PageTable))) == NULL) {
+        perror("Error allocating memory for page table.");
+        exit(EXIT_FAILURE);
+    }
+    return pt;
 }
 
-void PageTable_compare(const void* vp1, const void* vp2) {
+int PageTable_compare(const void* vp1, const void* vp2) {
     VPage* vp1_page = (VPage*)vp1;
-    VPage* vp2_page = (VPage*)vp1;
+    VPage* vp2_page = (VPage*)vp2;
     if (vp1_page->vpn < vp2_page->vpn) {
         return -1;
     } else if (vp1_page->vpn > vp2_page->vpn) {

@@ -56,4 +56,9 @@ bool it_find(IntervalNode* root, int x);
  */
 void it_print(IntervalNode* root);
 
-#endif
+/**
+ * A "smart increment" function. Returns the value that proceeds the integer passed as an argument,
+ * assuming it is not greater than or equal to the whole tree, in which case the result is just 0.
+ */
+int it_giveNext(IntervalNode* root, int current);
+#endif 

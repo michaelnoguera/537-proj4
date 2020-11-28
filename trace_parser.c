@@ -9,12 +9,8 @@
 #define _GNU_SOURCE
 
 #include "trace_parser.h"
-#include "pqueue.h"
 #include "process.h"
 #include <search.h>
-
-// credit: https://www.prevanders.net/tsearch.c
-// TODO: Email bart for attribution?
 
 struct PageTableEntry {
     int vpn;
