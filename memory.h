@@ -20,23 +20,26 @@
 */
 
 typedef unsigned int* freelist_t;
+// use a better name? unsigned long was appearing in too 
+// many places, it was getting quite long to type out
+typedef unsigned long ul64; 
 
 typedef struct vpage_t {
     // VIRTUAL page identified by <VPN, PID>
-    unsigned long vpn; // virtual page number
-    unsigned long pid; // process id
+    ul64 vpn; // virtual page number
+    ul64 pid; // process id
 
     void* overhead; // for replacement policy
 
     // page has a PHYSICAL location as well
     bool inMemory;
-    unsigned long currentPPN;
+    ul64 currentPPN;
 } VPage;
 
 // Represents a page from memory, identified both by a pid, vpn pair and a ppn
 // USE THIS AS VALUE IN TREES
 typedef struct ppage_t {
-    unsigned long ppn; // physical page number
+    ul64 ppn; // physical page number
     SLIST_ENTRY(freelistnode_t) node;
 
     VPage* virtualPage;
@@ -55,22 +58,22 @@ void Memory_init(size_t numberOfPhysicalPages);
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-PPage* Memory_getPPage(unsigned long ppn);
+PPage* Memory_getPPage(ul64 ppn);
 
 /**
  * Accesses the virtual page with a given ppn
  */
-VPage* Memory_getVPage(unsigned long ppn);
+VPage* Memory_getVPage(ul64 ppn);
 
 /**
  * Frees the page at a given ppn by sending the virtual page to backing store
  */
-void Memory_evictPage(unsigned long ppn);
+void Memory_evictPage(ul64 ppn);
 
 /**
  * @return the ppn of the next free page
  */
-unsigned long Memory_getFreePage();
+ul64 Memory_getFreePage();
 
 /**
  * @return true if there is a free page in memory
@@ -91,11 +94,11 @@ int Memory_load(VPage* virtualPage);
  * in vpage.
  * Interface for initOverhead must match
  * ```C
- * Overhead* initOverhead(unsigned long pid, unsigned long vpn);
+ * Overhead* initOverhead(ul64 pid, ul64 vpn);
  * ```
  * @return pointer to new VPage struct.
  */
-VPage* VPage_init(unsigned long pid, unsigned long vpn);
+VPage* VPage_init(ul64 pid, ul64 vpn);
 
 void VPage_free(VPage* vp);
 

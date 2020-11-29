@@ -15,25 +15,25 @@ static freelist_t freelist;
 
 // returns the index in the bitmap array which corresponds to the 
 // integer chunk given by n
-static inline int bv_ind(int n) {
+static inline ul64 bv_ind(ul64 n) {
     return n / 32;
 }
 
 // returns the offset in a chunk of a bitmap array given by n
-static inline int bv_ofs(int n) {
+static inline unsigned int bv_ofs(ul64 n) {
     return n % 32;
 }
 
 // finds the index of the first 0 (unallocated) in a freelist chunk
 // MSB indexed starting at 0, -1 if there are no 0s
-static inline int bv_ffz(int n) {
+static inline int bv_ffz(unsigned int n) {
     return (n == 0) ? -1 : __builtin_clz(~n);
 }
 /**
  * Initialize a new free page at the ppn specified.
  * @ppn ppn of page to create
  */
-static PPage* Page_init(unsigned long ppn) {
+static PPage* Page_init(ul64 ppn) {
     PPage* p = malloc(sizeof(PPage));
     if (p == NULL) {
         perror("memory allocation failed");
@@ -82,14 +82,14 @@ void Memory_init(size_t numberOfPhysicalPages) {
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-PPage* Memory_getPPage(unsigned long ppn) {
+PPage* Memory_getPPage(ul64 ppn) {
     return memory[ppn];
 }
 
 /**
  * Accesses the virtual page with a given ppn
  */
-VPage* Memory_getVPage(unsigned long ppn) {
+VPage* Memory_getVPage(ul64 ppn) {
     assert(memory[ppn] != NULL);
     return memory[ppn]->virtualPage;
 }
@@ -97,7 +97,7 @@ VPage* Memory_getVPage(unsigned long ppn) {
 /**
  * Frees the page at a given ppn by sending the virtual page to backing store
  */
-void Memory_evictPage(unsigned long ppn) {
+void Memory_evictPage(ul64 ppn) {
     PPage* page = memory[ppn];
     assert(page != NULL);
     free(page); // free page
@@ -114,8 +114,8 @@ void Memory_evictPage(unsigned long ppn) {
 /**
  * @return the ppn of the next free page
  */
-unsigned long Memory_getFreePage() {
-    int fl_ind = 0;
+ul64 Memory_getFreePage() {
+    ul64 fl_ind = 0;
     for (fl_ind = 0; fl_ind < mem_size; fl_ind++) {
         int fz_ind = bv_ffz(freelist[fl_ind]) ;
         if (fz_ind >= 0) {
@@ -144,7 +144,7 @@ int Memory_load(VPage* virtualPage);
  * @param virtualPage page to load as replacement
  * @param PPN location to load in memory
  */
-void Page_replace(VPage* virtualPage, unsigned long ppn);
+void Page_replace(VPage* virtualPage, ul64 ppn);
 
 /**
  * Constructs a new Virtual Page given it's virtual identifier.
@@ -153,7 +153,7 @@ void Page_replace(VPage* virtualPage, unsigned long ppn);
  * @param vpn virtual page number
  * @return pointer to new VPage struct.
  */
-VPage* VPage_init(unsigned long pid, unsigned long vpn) {
+VPage* VPage_init(ul64 pid, ul64 vpn) {
     VPage* v = malloc(sizeof(VPage));
     if (v == NULL) {
         perror("memory allocation failed");
