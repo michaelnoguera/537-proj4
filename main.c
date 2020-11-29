@@ -92,14 +92,21 @@ int main(int argc, char** argv) {
     printf("%d\n", it_giveNext(root, 4));
 
     // 3. RUN SIMULATION
-    // bool finished = false;
-    // unsigned long clock = 0; // time in nanoseconds
-    // Process* curr = NULL; // currently running process
+    bool finished = false;
+    unsigned long clock = 0; // time in nanoseconds
+    unsigned long currentline = 1;
+    Process* curr = NULL; // currently running process
 
-    // while (!finished) {
-    //   if
+    while (!finished) {
+       if (curr == NULL) {
+           curr = Process_peek(NOTSTARTED);
+           if (curr == NULL) {
+               finished = true;
+               break; // what if there are processes waiting for I/O?
+           }
+       }
 
-    //}
+    }
     
     
 

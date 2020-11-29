@@ -19,6 +19,8 @@
 ^*page
 */
 
+typedef unsigned int* freelist_t;
+
 typedef struct vpage_t {
     // VIRTUAL page identified by <VPN, PID>
     unsigned long vpn; // virtual page number

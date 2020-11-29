@@ -3,11 +3,32 @@
 #include <stdio.h>
 #include <sys/queue.h>
 
+// a representation of physical memory
 static PPage** memory;
-static struct freelist_t* freelist_head;
-static SLIST_HEAD(freelist_t,
-                  freelist_head) freelist = SLIST_HEAD_INITIALIZER(freelist);
+// holds memory size in pages
+static size_t mem_size;
+// holds the number of allocated pages
+static size_t allocated;
+// BitMap/Bitvector containing a 0 or 1 at a position given by the PPN,
+// depending on whether the page is allocated or not, respectively.
+static freelist_t freelist; 
 
+// returns the index in the bitmap array which corresponds to the 
+// integer chunk given by n
+static inline int bv_ind(int n) {
+    return n / 32;
+}
+
+// returns the offset in a chunk of a bitmap array given by n
+static inline int bv_ofs(int n) {
+    return n % 32;
+}
+
+// finds the index of the first 0 (unallocated) in a freelist chunk
+// MSB indexed starting at 0, -1 if there are no 0s
+static inline int bv_ffz(int n) {
+    return (n == 0) ? -1 : __builtin_clz(~n);
+}
 /**
  * Initialize a new free page at the ppn specified.
  * @ppn ppn of page to create
@@ -24,9 +45,11 @@ static PPage* Page_init(unsigned long ppn) {
 
     // place physical page in memory
     memory[ppn] = p;
+    allocated++;
 
     // add page to free list
-    SLIST_INSERT_HEAD(&freelist, p, node);
+    // OR with an integer containing 1 at the offset given by PPN
+    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
 
     return p;
 }
@@ -38,17 +61,20 @@ static PPage* Page_init(unsigned long ppn) {
 void Memory_init(size_t numberOfPhysicalPages) {
     // allocate contiguous chunk of memory to be "Memory", O(1) ppn resolution
     // via indexing
-    PPage** memory = malloc(sizeof(PPage) * numberOfPhysicalPages);
+    mem_size = numberOfPhysicalPages;
+    allocated = 0;
+    PPage** memory = malloc(sizeof(PPage) * mem_size);
     if (memory == NULL) {
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
     }
 
-    SLIST_INIT(&freelist);
+    //SLIST_INIT(&freelist);
+    freelist = (freelist_t)malloc(sizeof(unsigned int)*(mem_size/32));
 
     // request overhead struct from replacement strategy module
 
-    for (size_t p = 0; p < numberOfPhysicalPages; p++) { Page_init(p); }
+    for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
 }
 
 /**
@@ -71,17 +97,39 @@ VPage* Memory_getVPage(unsigned long ppn) {
 /**
  * Frees the page at a given ppn by sending the virtual page to backing store
  */
-void Memory_evictPage(unsigned long ppn);
+void Memory_evictPage(unsigned long ppn) {
+    PPage* page = memory[ppn];
+    assert(page != NULL);
+    free(page); // free page
+
+
+    // remove page from free list    
+    // XOR with an integer containing 1 at the offset given by PPN
+    // has effect of flipping at the offset position
+    freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn);
+    allocated--; // tick allocated counter
+    memory[ppn] = NULL; // finally nullify at memory array
+}
 
 /**
  * @return the ppn of the next free page
  */
-unsigned long Memory_getFreePage();
+unsigned long Memory_getFreePage() {
+    int fl_ind = 0;
+    for (fl_ind = 0; fl_ind < mem_size; fl_ind++) {
+        int fz_ind = bv_ffz(freelist[fl_ind]) ;
+        if (fz_ind >= 0) {
+            return fl_ind*32 + fz_ind;
+        }
+    }
+}
 
 /**
  * @return true if there is a free page in memory
  */
-bool Memory_hasFreePage();
+bool Memory_hasFreePage() {
+    return mem_size == allocated;
+}
 
 /**
  * Load a page in to memory by calling replacement module to find its spot
