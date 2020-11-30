@@ -18,7 +18,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
     Process* head = STAILQ_FIRST(q);
 
     do {
-        if (head == NULL || (p->firstline <= head->firstline)) {
+        if (head == NULL || (p->currentline <= head->currentline)) {
             STAILQ_INSERT_AFTER(q, p, head, procs);
         }
     } while ((head = STAILQ_NEXT(head, procs)) != NULL);
@@ -92,8 +92,11 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->firstline = firstline;
     p->currentline = firstline;
     p->lastline = lastline;
-    p->lineIntervals = NULL;
+    p->waitTime = 0;
     p->lineIntervals = lineIntervals;
+
+    p->currentPos = lineIntervals->fpos_start;
+    p->currInterval = lineIntervals;
 
     p->status = NOTSTARTED;
     STAILQ_INSERT_TAIL(&pq[NOTSTARTED], p, procs);

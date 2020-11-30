@@ -7,8 +7,8 @@
  */
 
 #include <stdlib.h>
-#include <assert.h>
 #include <stdio.h>
+#include <assert.h>
 #include "intervaltree.h"
 
 // Node constructor
@@ -63,7 +63,7 @@ void it_insert(IntervalNode* root, int low, int high) {
 }
 
 // Finds integer in whole subtree
-bool it_find(IntervalNode* root, int x) {
+bool it_find_bool(IntervalNode* root, int x) {
 
     // Make sure the root is not null, and that x isn't greater than the maximum.
     if ((root == NULL) || (x > root->max)) {
@@ -72,6 +72,23 @@ bool it_find(IntervalNode* root, int x) {
 
     // Check current root
     if (contains(root->low, root->high, x)) return true; 
+
+    if (root->left != NULL && root->left->max >= x) {
+        return it_find_bool(root->left, x);
+    } else {
+        return it_find_bool(root->right, x);
+    }
+}
+
+IntervalNode* it_find(IntervalNode* root, int x) {
+
+    // Make sure the root is not null, and that x isn't greater than the maximum.
+    if ((root == NULL) || (x > root->max)) {
+        return NULL;
+    }
+
+    // Check current root
+    if (contains(root->low, root->high, x)) return root; 
 
     if (root->left != NULL && root->left->max >= x) {
         return it_find(root->left, x);
@@ -111,4 +128,12 @@ int it_giveNext(IntervalNode* root, int current) {
     } else {
         return it_giveNext(root->right, current);
     }
+}
+
+inline void it_setFpos(IntervalNode* n, long p) {
+    n->fpos_start = p;
+}
+
+inline long it_getFpos(IntervalNode* n) {
+    return n->fpos_start;
 }
