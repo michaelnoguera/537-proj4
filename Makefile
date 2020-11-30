@@ -5,14 +5,21 @@ SCAN_BUILD_DIR=scan-build-out
 
 .PHONY:clean test all scan-build scan-view
 
-all: pfsim-placeholder
+all: pfsim
 
 # build executable
 # TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-pfsim-placeholder: main.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
-	gcc -o pfsim-placeholder main.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
+pfsim: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
+	gcc -o pfsim main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
 
-main.o: main.c trace_parser.h linkedlist.h intervaltree.h process.h memory.h
+main.o: main.c simulator.h trace_parser.h intervaltree.h process.h memory.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
+simulator.o: simulator.c simulator.h memory.h process.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else
@@ -61,7 +68,7 @@ test: all
 # Clean files
 clean:
 	rm -f *.o
-	rm -f pfsim-placeholder
+	rm -f pfsim
 
 # Run the Clang Static Analyzer
 scan-build: clean

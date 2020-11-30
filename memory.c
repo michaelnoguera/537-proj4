@@ -9,26 +9,24 @@ static PPage** memory;
 static size_t mem_size;
 // holds the number of allocated pages
 static size_t allocated;
+
 // BitMap/Bitvector containing a 0 or 1 at a position given by the PPN,
 // depending on whether the page is allocated or not, respectively.
-static freelist_t freelist; 
+static freelist_t freelist;
 
-// returns the index in the bitmap array which corresponds to the 
+// returns the index in the bitmap array which corresponds to the
 // integer chunk given by n
-static inline ul64 bv_ind(ul64 n) {
-    return n / 32;
-}
+static inline ul64 bv_ind(ul64 n) { return n / 32; }
 
 // returns the offset in a chunk of a bitmap array given by n
-static inline unsigned int bv_ofs(ul64 n) {
-    return n % 32;
-}
+static inline unsigned int bv_ofs(ul64 n) { return n % 32; }
 
 // finds the index of the first 0 (unallocated) in a freelist chunk
 // MSB indexed starting at 0, -1 if there are no 0s
 static inline int bv_ffz(unsigned int n) {
     return (n == 0) ? -1 : __builtin_clz(~n);
 }
+
 /**
  * Initialize a new free page at the ppn specified.
  * @ppn ppn of page to create
@@ -69,10 +67,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
         exit(EXIT_FAILURE);
     }
 
-    //SLIST_INIT(&freelist);
-    freelist = (freelist_t)malloc(sizeof(unsigned int)*(mem_size/32));
-
-    // request overhead struct from replacement strategy module
+    freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / 32));
 
     for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
 }
@@ -82,9 +77,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
  * @param ppn index into memory
  * @return PPage if present, NULL if not
  */
-PPage* Memory_getPPage(ul64 ppn) {
-    return memory[ppn];
-}
+PPage* Memory_getPPage(ul64 ppn) { return memory[ppn]; }
 
 /**
  * Accesses the virtual page with a given ppn
@@ -102,34 +95,30 @@ void Memory_evictPage(ul64 ppn) {
     assert(page != NULL);
     free(page); // free page
 
-
-    // remove page from free list    
+    // remove page from free list
     // XOR with an integer containing 1 at the offset given by PPN
     // has effect of flipping at the offset position
     freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn);
-    allocated--; // tick allocated counter
+    allocated--;        // tick allocated counter
     memory[ppn] = NULL; // finally nullify at memory array
 }
 
 /**
- * @return the ppn of the next free page
+ * @return the ppn of the next free page, or an out of bounds index if none
  */
 ul64 Memory_getFreePage() {
     ul64 fl_ind = 0;
     for (fl_ind = 0; fl_ind < mem_size; fl_ind++) {
-        int fz_ind = bv_ffz(freelist[fl_ind]) ;
-        if (fz_ind >= 0) {
-            return fl_ind*32 + fz_ind;
-        }
+        int fz_ind = bv_ffz(freelist[fl_ind]);
+        if (fz_ind >= 0) { return fl_ind * 32 + fz_ind; }
     }
+    return mem_size + 1; // out-of-bounds value as sentinel
 }
 
 /**
  * @return true if there is a free page in memory
  */
-bool Memory_hasFreePage() {
-    return mem_size == allocated;
-}
+bool Memory_hasFreePage() { return mem_size == allocated; }
 
 /**
  * Load a page in to memory by calling replacement module to find its spot
@@ -139,7 +128,8 @@ int Memory_load(VPage* virtualPage);
 
 /**
  * Evicts the page at a given PPN, replacing it with the specified new page.
- * Significantly faster than evicting, searching for free, getting free, and storing.
+ * Significantly faster than evicting, searching for free, getting free, and
+ * storing.
  * @details O(1), simply changes a few pointers
  * @param virtualPage page to load as replacement
  * @param PPN location to load in memory
@@ -160,8 +150,9 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
         exit(EXIT_FAILURE);
     }
 
+    v->pid = pid;
     v->vpn = vpn;
-    //v->overhead = Replace_initOverhead();
+    // v->overhead = Replace_initOverhead();
 
     v->inMemory = false;
 
@@ -169,6 +160,6 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
 }
 
 void VPage_free(VPage* vp) {
-    //Replace_freeOverhead(vp->overhead);
+    // Replace_freeOverhead(vp->overhead);
     free(vp);
 }

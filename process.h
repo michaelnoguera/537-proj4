@@ -33,28 +33,23 @@ typedef struct process_t {
     PageTable pageTable;
 } Process;
 
-// what is this?
-// struct processQueue_t *processQueue_head;
+void ProcessQueues_init(); // global static variable manages process states
+
+void ProcessQueue_printQueue(ProcessStatus q_s);
 
 // Use of BSD tail queue based on queue(3) manpage
 // and "Minimal example of TAILQ usage out of <sys/queue.h> library"
 // (https://stackoverflow.com/q/22315213/11639533)
 
-// All processes
 Process* Process_init();
-
-void ProcessQueues_init(); // global static variable manages process states
-
-struct processQueue_t* getQueueByName(ProcessStatus status);
-
-void ProcessQueue_enqueue(Process* p, struct processQueue_t* q);
-
-void ProcessQueue_printQueue(ProcessStatus q_s);
 
 Process* Process_init(unsigned long pid, unsigned long firstline,
                       unsigned long lastline, IntervalNode* lineIntervals);
 
 Process* Process_peek(ProcessStatus status);
+
+Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
+
 
 PageTable* PageTable_init();
 VPage* PageTable_get(PageTable* pt, int vpn, int pid);
