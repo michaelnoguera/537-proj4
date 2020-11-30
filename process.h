@@ -61,6 +61,7 @@ bool Process_existsWithStatus(ProcessStatus status);
 
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
 
+bool Process_hasLinesRemaining(const Process* p);
 
 PageTable* PageTable_init();
 VPage* PageTable_get(PageTable* pt, int vpn, int pid);

@@ -1,5 +1,6 @@
 #include "process.h"
 #include "memory.h"
+#include <assert.h>
 #include <search.h>
 #include <stdio.h>
 
@@ -136,6 +137,17 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
     p->status = s2;
     ProcessQueue_enqueue(p, &pq[s2]);
     return p;
+}
+
+/**
+ * Checks to see if the specified process has more lines left to run.
+ * @param p process
+ * @return true if there are lines left for the process to run, false if all
+ * trace lines have completed
+ */
+inline bool Process_hasLinesRemaining(const Process* p) {
+    assert(p->currInterval != NULL);
+    return (p->currInterval->right == NULL);
 }
 
 /**
