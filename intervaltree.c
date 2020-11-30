@@ -130,10 +130,10 @@ int it_giveNext(IntervalNode* root, int current) {
     }
 }
 
-inline void it_setFpos(IntervalNode* n, long p) {
+void it_setFpos(IntervalNode* n, long p) {
     n->fpos_start = p;
 }
 
-inline long it_getFpos(IntervalNode* n) {
+long it_getFpos(IntervalNode* n) {
     return n->fpos_start;
 }

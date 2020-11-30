@@ -6,9 +6,9 @@
  * and end indices.
  * @file trace_parser.c
  */
+ #define _GNU_SOURCE
 
 #include <stdio.h>
-#define _GNU_SOURCE
 
 #include "trace_parser.h"
 #include "process.h"
@@ -128,13 +128,13 @@ void first_pass(FILE* trace_file) {
                     Process* curr_proc = Process_init(
                       pid, start_line_number, curr_line_number - 1,
                       it_initnode(start_line_number, curr_line_number - 1));
-                    it_setFpos(curr_proc, start_fpos);
+                    it_setFpos(curr_proc->currInterval, start_fpos);
                     new_pdm->owner = curr_proc; // update the owner of the entry
                                                 // in the search tree
 
                     start_line_number =
                       curr_line_number; // reset start_line_number
-                    if (fgetpos(trace_file, &start_fpos) != 0) {
+                    if ((start_fpos = ftell(trace_file)) == -1) {
                         perror("Error retrieving file position in tracefile.");
                         exit(EXIT_FAILURE);
                     }

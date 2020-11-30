@@ -8,7 +8,7 @@
 #include "simulator.h"
 #include "intervaltree.h"
 
-inline int Simulator_parseVPN(Process* p, FILE* tracefile) {
+static inline int Simulator_parseVPN(Process* p, FILE* tracefile) {
     int vpn;
     fscanf(tracefile, "%*d %d", &vpn);
     p->currentline++;
@@ -26,7 +26,7 @@ void Simulator_runSimulation(FILE* tracefile) {
         if (first_wait != NULL) {
             assert(first_wait->waitTime > 0);
             first_wait->waitTime--;
-            
+
             if(first_wait->waitTime == 0) {
                 // fill in details for loading pages into memory
             }

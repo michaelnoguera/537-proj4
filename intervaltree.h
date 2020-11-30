@@ -22,6 +22,8 @@ typedef struct interval_node_t {
     struct interval_node_t* right; // pointer to right interval node
 } IntervalNode;
 
+bool contains(int low, int high, int x);
+
 /**
  * Constructs a new interval node
  * @return a pointer to the IntervalNode
@@ -74,6 +76,6 @@ void it_print(IntervalNode* root);
  */
 int it_giveNext(IntervalNode* root, int current);
 
-inline void it_setFpos(IntervalNode* n, long p);
-inline long it_getFpos(IntervalNode* n);
+void it_setFpos(IntervalNode* n, long p);
+long it_getFpos(IntervalNode* n);
 #endif 
