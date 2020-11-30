@@ -1,4 +1,5 @@
 #include "memory.h"
+#include <stdio.h>
 #include <sys/queue.h>
 
 #ifndef _PROCESS_
@@ -29,7 +30,13 @@ typedef struct process_t {
     unsigned long firstline;
     unsigned long currentline;
     unsigned long lastline;
+    long currentPos;
+    IntervalNode* currInterval;
+
     IntervalNode* lineIntervals;
+
+    // Wait time
+    unsigned long waitTime; // timer for a disk operation in ticks
 
     // Map of VPN->PPN
     PageTable pageTable;

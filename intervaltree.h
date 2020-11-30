@@ -7,18 +7,22 @@
  */
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifndef _INTTREE_
 #define _INTTREE_
 
 typedef struct interval_node_t {
     int low; // low of current interval
-    int high; // high of current inveral
-    int max; // max value present throughout entire subtree given by node
+    int high; // high of current interval
+        int max; // max value present throughout entire subtree given by node
+    long fpos_start;
 
     struct interval_node_t* left; // pointer to left interval node
     struct interval_node_t* right; // pointer to right interval node
 } IntervalNode;
+
+bool contains(int low, int high, int x);
 
 /**
  * Constructs a new interval node
@@ -45,7 +49,17 @@ void it_insert(IntervalNode* root, int low, int high);
  * 
  * @return true if found, false if not. 
  */
-bool it_find(IntervalNode* root, int x);
+bool it_find_bool(IntervalNode* root, int x);
+
+/**
+ * Finds an integer X within the entire tree.
+ * 
+ * @param root Root of tree to search in
+ * @param x value to search for
+ * 
+ * @return pointer to found node, NULL if not found. 
+ */
+IntervalNode* it_find(IntervalNode* root, int x);
 
 /**
  * Walks a specified tree and prints all of its intervals.
@@ -61,4 +75,7 @@ void it_print(IntervalNode* root);
  * assuming it is not greater than or equal to the whole tree, in which case the result is just 0.
  */
 int it_giveNext(IntervalNode* root, int current);
+
+void it_setFpos(IntervalNode* n, long p);
+long it_getFpos(IntervalNode* n);
 #endif 
