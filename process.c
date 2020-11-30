@@ -79,6 +79,13 @@ Process* Process_peek(ProcessStatus status) {
 }
 
 /**
+ * @return true if there is a process in the specified status queue, else false.
+ */
+bool Process_existsWithStatus(ProcessStatus status) {
+    return !(STAILQ_EMPTY(&pq[status]));
+}
+
+/**
  * Constructs a new Process and initializes internal fields.
  * @param pid pid of new process
  * @param firstline first line number in tracefile corresponding to this proc.
@@ -117,10 +124,11 @@ void Process_setStatus(Process* p, ProcessStatus status) {
  * Faster than setStatus because it doesn't need to search.
  * @param s1 source status
  * @param s2 destination status
- * @return the process that was moved
+ * @return the process that was moved, or null if none found in s1 queue
  */
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
     Process* p = STAILQ_FIRST(&pq[s1]);
+    if (p == NULL) return NULL;
     STAILQ_REMOVE_HEAD(&pq[s1], procs);
     p->status = s2;
     ProcessQueue_enqueue(p, &pq[s2]);

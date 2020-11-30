@@ -2,7 +2,7 @@
 #include <sys/queue.h>
 
 #ifndef _PROCESS_
-#define _PROCESS_
+#    define _PROCESS_
 
 typedef enum ProcessStatus {
     RUNNING,
@@ -22,6 +22,8 @@ typedef struct process_t {
     // Queue overhead
     STAILQ_ENTRY(process_t) procs;
     ProcessStatus status;
+
+    int waitCounter;
 
     // Process's location in the file
     unsigned long firstline;
@@ -47,6 +49,8 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
                       unsigned long lastline, IntervalNode* lineIntervals);
 
 Process* Process_peek(ProcessStatus status);
+
+bool Process_existsWithStatus(ProcessStatus status);
 
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
 
