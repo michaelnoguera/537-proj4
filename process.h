@@ -6,12 +6,12 @@
 #    define _PROCESS_
 
 typedef enum ProcessStatus {
-    RUNNING,
-    WAITING,
-    BLOCKED,
-    NOTSTARTED,
-    FINISHED,
-    NUM_OF_PROCESS_STATUSES
+    RUNNING = 0,
+    WAITING = 1,
+    BLOCKED = 2,
+    NOTSTARTED = 1,
+    FINISHED = 3,
+    NUM_OF_PROCESS_STATUSES = 4,
 } ProcessStatus;
 
 typedef void* PageTable;
@@ -62,6 +62,9 @@ bool Process_existsWithStatus(ProcessStatus status);
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
 
 bool Process_hasLinesRemaining(const Process* p);
+
+void Process_jumpToNextInterval(Process* p);
+void Process_free(Process* p);
 
 PageTable* PageTable_init();
 VPage* PageTable_get(PageTable* pt, int vpn, int pid);

@@ -27,7 +27,7 @@ IntervalNode* it_initnode(int low, int high) {
     return in;
 }
 
-bool contains(int low, int high, int x) {
+bool it_contains(int low, int high, int x) {
     return low <= x && x <= high;
 }
 
@@ -62,6 +62,31 @@ void it_insert(IntervalNode* root, int low, int high) {
     root = it_insert_recursive(root, low, high);
 }
 
+// Insert node at the given subtree
+IntervalNode* it_insert_retptr(IntervalNode* root, int low, int high) {
+
+    // BASE CASE: correct empty location found --> add here
+    if (root == NULL) {
+        return it_initnode(low, high);
+    }
+
+    IntervalNode* retptr = NULL;
+
+    // ELSE: try to insert in left/right tree depending on where the interval lies w.r.t to the current node
+    if (low < root->low) {
+        retptr = it_insert_recursive(root->left, low, high);
+    } else {
+        retptr = it_insert_recursive(root->right, low, high);
+    }
+
+    // Update the maximum value of the subtree at root (used to make find() faster)
+    if (high > root->max) {
+        root->max = high;
+    }
+
+    return retptr;
+}
+
 // Finds integer in whole subtree
 bool it_find_bool(IntervalNode* root, int x) {
 
@@ -71,7 +96,7 @@ bool it_find_bool(IntervalNode* root, int x) {
     }
 
     // Check current root
-    if (contains(root->low, root->high, x)) return true; 
+    if (it_contains(root->low, root->high, x)) return true; 
 
     if (root->left != NULL && root->left->max >= x) {
         return it_find_bool(root->left, x);
@@ -88,7 +113,7 @@ IntervalNode* it_find(IntervalNode* root, int x) {
     }
 
     // Check current root
-    if (contains(root->low, root->high, x)) return root; 
+    if (it_contains(root->low, root->high, x)) return root; 
 
     if (root->left != NULL && root->left->max >= x) {
         return it_find(root->left, x);

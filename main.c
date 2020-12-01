@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     // 3. Read "first pass", ennumerating pids and building interval tree
     first_pass(tracefile);
 
-    ProcessQueue_printQueue(NOTSTARTED);
+    // ProcessQueue_printQueue(NOTSTARTED);
 
     // 3. RUN SIMULATION
     Simulator_runSimulation(tracefile);

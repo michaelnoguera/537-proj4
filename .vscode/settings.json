@@ -8,6 +8,11 @@
         "unordered_map": "c",
         "vector": "c",
         "string_view": "c",
-        "initializer_list": "c"
+        "initializer_list": "c",
+        "*.tcc": "c",
+        "iosfwd": "c",
+        "functional": "c",
+        "tuple": "c",
+        "numeric": "c"
     }
 }

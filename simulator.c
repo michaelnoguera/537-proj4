@@ -29,15 +29,17 @@ void Simulator_runSimulation(FILE* tracefile) {
 
     // unsigned long currentline = 1;
     assert(tracefile != NULL && "tracefile can't be null");
+    fseek(tracefile, 0, SEEK_SET); // reset ptr
+    Process* p;
 
     while (notDone()) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
-        printf("Tick! time=%i\n", time);
+        // printf("Tick! time=%i\n", time);
 
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
-            printf("%s\n", "Checking on blocked processes.");
+            // printf("%s\n", "Checking on blocked processes.");
             if (--(Process_peek(BLOCKED)->waitCounter) == 0) {
                 Process_switchStatus(RUNNING, WAITING); // i/o completed
                 Process_switchStatus(BLOCKED, RUNNING);
@@ -46,7 +48,7 @@ void Simulator_runSimulation(FILE* tracefile) {
 
         // 2. If there isn't a current process, choose the next one
         if (!Process_existsWithStatus(RUNNING)) {
-            printf("%s\n", "Searching for next process to run.");
+            // printf("%s\n", "Searching for next process to run.");
             if (Process_existsWithStatus(WAITING)) { // 1. resume interrupted?
                 Process_switchStatus(WAITING, RUNNING);
             } else if (Process_existsWithStatus(NOTSTARTED)) { // 2. new proc.
@@ -60,35 +62,46 @@ void Simulator_runSimulation(FILE* tracefile) {
 
                 break; // everything's done, exit loop
             }
+
+            // We just got a new process, update state
+            p = Process_peek(RUNNING);
+            printf("Context switching to pid=%lu\n", p->pid);
+            fseek(tracefile, p->currentPos, SEEK_SET);
+            printf("start position in file: %ld\n", p->currentPos);
         }
 
         // 3. Find line to run next
-        Process* p = Process_peek(RUNNING);
-        printf("Running process with pid=%lu\n", p->pid);
+
+        // printf("Running process with pid=%lu\n", p->pid);
 
         unsigned long pid;
         unsigned long vpn;
 
         assert(p->currInterval != NULL);
-        if (contains(p->currInterval->low, p->currInterval->high,
-                     p->currentline)) {
-            fscanf(tracefile, "%lu %lu", &pid, &vpn);
+        printf("PID %ld\n" , p->pid);
+        printf("current line %ld\n" , p->currentline);
+        // case 1: next line immediately follows the current one
+        if (it_contains(p->currInterval->low, p->currInterval->high,
+                        p->currentline)) {
+            printf("%s\n", "Next line within current interval.");
+            fscanf(tracefile, "%lu %lu\n", &pid, &vpn);
+            printf("%lu %lu\n", pid, vpn);
             assert(pid == p->pid);
             p->currentline++;
         } else {
             // Intervals cannot overlap, so the next greater interval will
             // appear directly to the right of a given node
             if (p->currInterval->right == NULL) {
+                printf("%s\n", "This process finished!.");
                 Process_switchStatus(RUNNING, FINISHED);
                 // FREE ALL PAGES THIS PROCESSED USED HERE
+                // TODO make sure Process_free() works as intended;
+                Process_free(p);
+                p = NULL;
             } else {
-                // Context switch; we are done with the current process for
-                // now, but it will appear again.
-                p->currInterval = p->currInterval->right;
-                p->currentline = p->currInterval->low;
-                p->currentPos = p->currInterval->fpos_start;
-
-                Process_switchStatus(WAITING, WAITING);
+                printf("%s\n", "Context switch!");
+                Process_jumpToNextInterval(p);
+                Process_switchStatus(RUNNING, WAITING);
             }
         }
 

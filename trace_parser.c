@@ -5,14 +5,19 @@
  * @brief Handle parsing and initial pass over trace files, to determine start
  * and end indices.
  * @file trace_parser.c
+ * Use of tsearch in this module is based off of Robert William's example (@765)
+ * https://github.com/increscent/c_examples/blob/main/tsearch/main.c
  */
- #define _GNU_SOURCE
+#define _GNU_SOURCE
 
-#include <stdio.h>
 
 #include "trace_parser.h"
 #include "process.h"
+
+#include <assert.h>
 #include <search.h>
+#include <stdio.h>
+
 
 // Maps a pid to its owner process struct, for tsearch purposes
 struct PidMap {
@@ -73,6 +78,7 @@ void first_pass(FILE* trace_file) {
     unsigned long pid = 0;
     unsigned long start_line_number = 1;
     long start_fpos;
+    long curr_fpos;
     if ((start_fpos = ftell(trace_file)) == -1) {
         perror("Error retrieving file position in tracefile.");
         exit(EXIT_FAILURE);
@@ -86,6 +92,11 @@ void first_pass(FILE* trace_file) {
     // failed." See getline(3)
     int getline_result = 0;
     do {
+        if ((curr_fpos = ftell(trace_file)) == -1) {
+                        perror("Error retrieving file position in tracefile.");
+                        exit(EXIT_FAILURE);
+        }
+
         getline_result = getline(&line, &bufsize, trace_file);
 
         unsigned long curr_pid = strtoul(line, NULL, 10); // Parse current line
@@ -94,6 +105,7 @@ void first_pass(FILE* trace_file) {
                     curr_line_number);
             exit(EXIT_FAILURE);
         }
+
         // Was the PID found on current line different than the last? enter
         // condition for creating a new Process* struct and adding to
         // list/queue.
@@ -120,24 +132,25 @@ void first_pass(FILE* trace_file) {
                       (existing->owner->lastline < curr_line_number - 1)
                         ? curr_line_number - 1
                         : existing->owner->lastline;
-                    it_insert(existing->owner->lineIntervals, start_line_number,
+                    // todo update file pos
+                    IntervalNode* new_node = it_insert_retptr(existing->owner->lineIntervals, start_line_number,
                               curr_line_number - 1);
+                    it_setFpos(new_node, start_fpos);
 
                 } else {
                     // no process existed, create one
+                    IntervalNode* new_IntervalNode = it_initnode(start_line_number, curr_line_number - 1);
+                    it_setFpos(new_IntervalNode, start_fpos);
                     Process* curr_proc = Process_init(
                       pid, start_line_number, curr_line_number - 1,
-                      it_initnode(start_line_number, curr_line_number - 1));
-                    it_setFpos(curr_proc->currInterval, start_fpos);
+                      new_IntervalNode);
+
                     new_pdm->owner = curr_proc; // update the owner of the entry
                                                 // in the search tree
-
+                    start_fpos = curr_fpos;
                     start_line_number =
                       curr_line_number; // reset start_line_number
-                    if ((start_fpos = ftell(trace_file)) == -1) {
-                        perror("Error retrieving file position in tracefile.");
-                        exit(EXIT_FAILURE);
-                    }
+                    
                 }
             }
         }

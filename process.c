@@ -49,9 +49,9 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
         case BLOCKED:
             printf("BLOCKED\n");
             break;
-        case NOTSTARTED:
+        /*case NOTSTARTED:
             printf("NOTSTARTED\n");
-            break;
+            break;*/
         case NUM_OF_PROCESS_STATUSES:
             printf("NUM_OF_PROCESS_STATUSES (not a valid queue)");
             break;
@@ -148,6 +148,16 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
 inline bool Process_hasLinesRemaining(const Process* p) {
     assert(p->currInterval != NULL);
     return (p->currInterval->right == NULL);
+}
+
+/**
+ * Context switch; we are done with the current process for now, but it will
+ * appear again.
+ */
+inline void Process_jumpToNextInterval(Process* p) {
+    p->currInterval = p->currInterval->right;
+    p->currentline = p->currInterval->low;
+    p->currentPos = p->currInterval->fpos_start;
 }
 
 /**

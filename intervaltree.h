@@ -22,7 +22,7 @@ typedef struct interval_node_t {
     struct interval_node_t* right; // pointer to right interval node
 } IntervalNode;
 
-bool contains(int low, int high, int x);
+bool it_contains(int low, int high, int x);
 
 /**
  * Constructs a new interval node
@@ -40,6 +40,17 @@ IntervalNode* it_initnode(int low, int high);
  * @return none
  */
 void it_insert(IntervalNode* root, int low, int high);
+
+/**
+ * Inserts an interval into the tree.
+ * 
+ * @param root Root of tree to insert into
+ * @param low low value of interval being inserted
+ * @param value high value of interval being inserted
+ * 
+ * @return the pointer of the new node created
+ */
+IntervalNode* it_insert_retptr(IntervalNode* root, int low, int high);
 
 /**
  * Finds an integer X within the entire tree.
