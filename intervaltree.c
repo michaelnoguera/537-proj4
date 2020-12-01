@@ -33,58 +33,33 @@ bool it_contains(int low, int high, int x) {
 
 // Insert node at the given subtree
 // Helper for it_insert, so that the root can be set properly by return value.
-IntervalNode* it_insert_recursive(IntervalNode* root, int low, int high) {
+IntervalNode* it_insert_recursive(IntervalNode* root, IntervalNode* new_node) {
 
     // BASE CASE: correct empty location found --> add here
     if (root == NULL) {
-        return it_initnode(low, high);
+        return new_node;
     }
 
     // ELSE: try to insert in left/right tree depending on where the interval lies w.r.t to the current node
-    if (low < root->low) {
-        root->left = it_insert_recursive(root->left, low, high);
+    if (new_node->low < root->low) {
+        root->left = it_insert_recursive(root->left, new_node);
     } else {
-        root->right = it_insert_recursive(root->right, low, high);
+        root->right = it_insert_recursive(root->right, new_node);
     }
 
     // Update the maximum value of the subtree at root (used to make find() faster)
-    if (high > root->max) {
-        root->max = high;
+    if (new_node->high > root->max) {
+        root->max = new_node->high;
     }
 
     return root;
 }
 
 // Insert interval into a given tree
-void it_insert(IntervalNode* root, int low, int high) {
-    assert(root != NULL);
+void it_insert(IntervalNode* root, IntervalNode* new_node) {
+    assert(root != NULL && new_node != NULL);
 
-    root = it_insert_recursive(root, low, high);
-}
-
-// Insert node at the given subtree
-IntervalNode* it_insert_retptr(IntervalNode* root, int low, int high) {
-
-    // BASE CASE: correct empty location found --> add here
-    if (root == NULL) {
-        return it_initnode(low, high);
-    }
-
-    IntervalNode* retptr = NULL;
-
-    // ELSE: try to insert in left/right tree depending on where the interval lies w.r.t to the current node
-    if (low < root->low) {
-        retptr = it_insert_recursive(root->left, low, high);
-    } else {
-        retptr = it_insert_recursive(root->right, low, high);
-    }
-
-    // Update the maximum value of the subtree at root (used to make find() faster)
-    if (high > root->max) {
-        root->max = high;
-    }
-
-    return retptr;
+    root = it_insert_recursive(root, new_node);
 }
 
 // Finds integer in whole subtree

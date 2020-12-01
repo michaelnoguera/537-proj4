@@ -123,8 +123,8 @@ void first_pass(FILE* trace_file) {
                 struct PidMap* existing = *(struct PidMap**)search_result;
                 if (existing != new_pdm) {
                     // An existing result was found.
-                    // Merge intervals in the current occurence and the existing
-                    // occcurence, using it_insert().
+                    // Merge intervals in the current occurrence and the existing
+                    // occurrence, using it_insert().
                     PidMap_free(new_pdm);
 
                     assert(existing->owner != NULL);
@@ -132,11 +132,10 @@ void first_pass(FILE* trace_file) {
                       (existing->owner->lastline < curr_line_number - 1)
                         ? curr_line_number - 1
                         : existing->owner->lastline;
-                    // todo update file pos
-                    IntervalNode* new_node = it_insert_retptr(existing->owner->lineIntervals, start_line_number,
-                              curr_line_number - 1);
-                    it_setFpos(new_node, start_fpos);
-
+                    
+                    IntervalNode* new_IntervalNode = it_initnode(start_line_number, curr_line_number - 1);
+                    it_setFpos(new_IntervalNode, start_fpos);
+                    it_insert(existing->owner->lineIntervals, new_IntervalNode);
                 } else {
                     // no process existed, create one
                     IntervalNode* new_IntervalNode = it_initnode(start_line_number, curr_line_number - 1);
@@ -147,11 +146,10 @@ void first_pass(FILE* trace_file) {
 
                     new_pdm->owner = curr_proc; // update the owner of the entry
                                                 // in the search tree
-                    start_fpos = curr_fpos;
+                }
+                start_fpos = curr_fpos;
                     start_line_number =
                       curr_line_number; // reset start_line_number
-                    
-                }
             }
         }
 

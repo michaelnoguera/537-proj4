@@ -55,7 +55,7 @@ void Simulator_runSimulation(FILE* tracefile) {
                 Process_switchStatus(NOTSTARTED, RUNNING);
             } else if (Process_existsWithStatus(BLOCKED)) {
                 // TODO if time, implement magic jumping through time
-                Stat_nothing_happened();
+                // Stat_nothing_happened();
                 continue; // all blocked, short-circuit to next cycle
             } else {
                 perror(
@@ -102,10 +102,10 @@ void Simulator_runSimulation(FILE* tracefile) {
 
         // 4. Simulate memory reference
         // get the virtual page-> look up in page table for this proc.
-        VPage* v = PageTable_get(p->pageTable, vpn, pid);
+        //VPage* v = PageTable_get(p->pageTable, vpn, pid);
 
         // Create new v. page if none exists
-        if (v == NULL) {
+        /*if (v == NULL) {
             // this is a new allocation
             // create a new page: v = new page
         }
@@ -115,15 +115,15 @@ void Simulator_runSimulation(FILE* tracefile) {
             // tell the replacement module it was accessed
             // continue
             // else
-            Stat_hit();
+            // Stat_hit();
         } else {
             // need to swap page from disk
             // block the process
             // continue
             // ...when block expires...
             // tell the replacement module that the page is ready
-            Stat_miss();
-        }
+            // Stat_miss();
+        }*/
 
         // 
 

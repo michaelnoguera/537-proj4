@@ -31,26 +31,14 @@ bool it_contains(int low, int high, int x);
 IntervalNode* it_initnode(int low, int high);
 
 /**
- * Inserts an interval into the tree.
+ * Inserts an interval node into the tree.
  * 
  * @param root Root of tree to insert into
- * @param low low value of interval being inserted
- * @param value high value of interval being inserted
+ * @param new New node to insert
  * 
  * @return none
  */
-void it_insert(IntervalNode* root, int low, int high);
-
-/**
- * Inserts an interval into the tree.
- * 
- * @param root Root of tree to insert into
- * @param low low value of interval being inserted
- * @param value high value of interval being inserted
- * 
- * @return the pointer of the new node created
- */
-IntervalNode* it_insert_retptr(IntervalNode* root, int low, int high);
+void it_insert(IntervalNode* root, IntervalNode* new_node);
 
 /**
  * Finds an integer X within the entire tree.
