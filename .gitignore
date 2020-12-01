@@ -1,2 +1,4 @@
 *.o
 pfsim
+pfsim-*
+tmp*

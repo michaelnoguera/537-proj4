@@ -4,7 +4,7 @@
  * Initializes general replacement module overhead, if any.
  * @details run before page allocation starts
  */
-void Replace_initReplacementModule() {}
+void Replace_initReplacementModule(int numberOfPhysicalPages);
 
 /**
  * A generic constructor method for overhead struct
@@ -22,7 +22,7 @@ void Replace_freeOverhead(void* o_ptr);
  * Cleans up module overhead
  * @details run after simulation complete
  */
-void Replace_freeReplacementModule() {}
+void Replace_freeReplacementModule();
 
 /**
  * A generic method to update any overhead/tracking information the
@@ -38,8 +38,9 @@ void Replace_updateOverhead(void* o_ptr);
  * algorithm to choose a victim.
  * @return ppn of page to evict
  */
-int Replace_getPageToEvict();
+unsigned long Replace_getPageToEvict();
 
-void Replace_notifyPageAccess(int ppn); // because ppn lookup is constant and vpn is log
-// build an internal representation of page
-// Fifo: enqueue, clock: create bit, etc.
+void Replace_notifyPageAccess(
+  int ppn); // because ppn lookup is constant and vpn is log
+            // build an internal representation of page
+            // Fifo: enqueue, clock: create bit, etc.

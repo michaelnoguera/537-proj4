@@ -5,12 +5,19 @@ SCAN_BUILD_DIR=scan-build-out
 
 .PHONY:clean test all scan-build scan-view
 
-all: pfsim
+all: pfsim-random
 
 # build executable
 # TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-pfsim: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
-	gcc -o pfsim main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o
+pfsim-random: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace_random.o
+	gcc -o pfsim-random main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace.h
+
+replace_random.o: replace.h memory.h process.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
 
 main.o: main.c simulator.h trace_parser.h intervaltree.h process.h memory.h
 ifeq ($(DEBUG),true)
@@ -68,7 +75,7 @@ test: all
 # Clean files
 clean:
 	rm -f *.o
-	rm -f pfsim
+	rm -f pfsim-random
 
 # Run the Clang Static Analyzer
 scan-build: clean
