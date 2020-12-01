@@ -101,6 +101,7 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->currentline = firstline;
     p->lastline = lastline;
     p->waitTime = 0;
+    p->waiting_VPN = NULL;
     p->lineIntervals = lineIntervals;
 
     p->currentPos = lineIntervals->fpos_start;

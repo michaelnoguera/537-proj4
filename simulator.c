@@ -7,6 +7,7 @@
 
 #include "simulator.h"
 #include "intervaltree.h"
+#include "replace.h"
 #include <assert.h>
 
 enum {
@@ -40,7 +41,17 @@ void Simulator_runSimulation(FILE* tracefile) {
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
             // printf("%s\n", "Checking on blocked processes.");
-            if (--(Process_peek(BLOCKED)->waitCounter) == 0) {
+            if (--(Process_peek(BLOCKED)->waitTime) == 0) {
+                Process* p = Process_peek(BLOCKED);
+        
+                assert(p->waiting_VPN != NULL);
+                int ppn;
+                if (Memory_hasFreePage()) {
+                    ppn = Memory_getFreePage();
+                } else {
+                    // ppn = Replace_getNewPage(p->waiting_VPN);
+                }
+                Memory_loadPage(p->waiting_VPN, ppn);
                 Process_switchStatus(RUNNING, WAITING); // i/o completed
                 Process_switchStatus(BLOCKED, RUNNING);
             }

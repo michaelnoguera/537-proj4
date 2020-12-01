@@ -24,19 +24,17 @@ typedef struct process_t {
     STAILQ_ENTRY(process_t) procs;
     ProcessStatus status;
 
-    int waitCounter;
-
     // Process's location in the file
     unsigned long firstline;
     unsigned long currentline;
     unsigned long lastline;
     long currentPos;
     IntervalNode* currInterval;
-
     IntervalNode* lineIntervals;
 
-    // Wait time
+    // Wait info
     unsigned long waitTime; // timer for a disk operation in ticks
+    VPage* waiting_VPN;
 
     // Map of VPN->PPN
     PageTable pageTable;

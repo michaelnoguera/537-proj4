@@ -71,6 +71,12 @@ VPage* Memory_getVPage(ul64 ppn);
 void Memory_evictPage(ul64 ppn);
 
 /**
+ * Load a page in to memory
+ * @return none
+ */
+void Memory_loadPage(VPage* virtualPage, ul64 ppn);
+
+/**
  * @return the ppn of the next free page
  */
 ul64 Memory_getFreePage();
@@ -79,12 +85,6 @@ ul64 Memory_getFreePage();
  * @return true if there is a free page in memory
  */
 bool Memory_hasFreePage();
-
-/**
- * Load a page in to memory by calling replacement module to find its spot
- * @return 0 upon success, 1 upon failure
- */
-int Memory_load(VPage* virtualPage);
 
 /**
  * Constructs a new Virtual Page given it's virtual identifier

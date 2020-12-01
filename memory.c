@@ -41,14 +41,6 @@ static PPage* Page_init(ul64 ppn) {
     p->ppn = ppn;
     p->virtualPage = NULL;
 
-    // place physical page in memory
-    memory[ppn] = p;
-    allocated++;
-
-    // add page to free list
-    // OR with an integer containing 1 at the offset given by PPN
-    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
-
     return p;
 }
 
@@ -61,7 +53,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
     // via indexing
     mem_size = numberOfPhysicalPages;
     allocated = 0;
-    PPage** memory = malloc(sizeof(PPage) * mem_size);
+    PPage** memory = calloc(mem_size,sizeof(PPage));
     if (memory == NULL) {
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
@@ -69,7 +61,8 @@ void Memory_init(size_t numberOfPhysicalPages) {
 
     freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / 32));
 
-    for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
+    // they're meant to be left uninitialized, not like this
+    //for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
 }
 
 /**
@@ -95,11 +88,30 @@ void Memory_evictPage(ul64 ppn) {
     assert(page != NULL);
     free(page); // free page
 
-    // remove page from free list
+    // remove page from free list (mark as clear)
     // XOR with an integer containing 1 at the offset given by PPN
     // has effect of flipping at the offset position
     freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn);
     allocated--;        // tick allocated counter
+    memory[ppn] = NULL; // finally nullify at memory array
+}
+
+/**
+ * Loads a page at the given PPN, replacing the old page if applicable
+ * @details O(1), simply changes a few pointers
+ * @param virtualPage page to load as replacement
+ * @param PPN location to load in memory
+ */
+void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
+    PPage* page = Page_init(ppn);
+    page->virtualPage = virtualPage;
+    memory[ppn] = page;
+
+    // add page to free list (mark as taken)
+    // OR with an integer containing 1 at the offset given by PPN
+    // has effect of setting to 1 at the offset position
+    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
+    allocated++;        // tick allocated counter
     memory[ppn] = NULL; // finally nullify at memory array
 }
 
@@ -125,16 +137,6 @@ bool Memory_hasFreePage() { return mem_size == allocated; }
  * @return 0 upon success, 1 upon failure
  */
 int Memory_load(VPage* virtualPage);
-
-/**
- * Evicts the page at a given PPN, replacing it with the specified new page.
- * Significantly faster than evicting, searching for free, getting free, and
- * storing.
- * @details O(1), simply changes a few pointers
- * @param virtualPage page to load as replacement
- * @param PPN location to load in memory
- */
-void Page_replace(VPage* virtualPage, ul64 ppn);
 
 /**
  * Constructs a new Virtual Page given it's virtual identifier.
