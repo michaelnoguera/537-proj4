@@ -54,6 +54,8 @@ void Simulator_runSimulation(FILE* tracefile) {
             } else if (Process_existsWithStatus(NOTSTARTED)) { // 2. new proc.
                 Process_switchStatus(NOTSTARTED, RUNNING);
             } else if (Process_existsWithStatus(BLOCKED)) {
+                // TODO if time, implement magic jumping through time
+                Stat_nothing_happened();
                 continue; // all blocked, short-circuit to next cycle
             } else {
                 perror(
@@ -65,25 +67,18 @@ void Simulator_runSimulation(FILE* tracefile) {
 
             // We just got a new process, update state
             p = Process_peek(RUNNING);
-            printf("Context switching to pid=%lu\n", p->pid);
+            printf("switching to pid=%lu at position=%lu\n", p->pid, p->currentPos);
             fseek(tracefile, p->currentPos, SEEK_SET);
-            printf("start position in file: %ld\n", p->currentPos);
         }
 
         // 3. Find line to run next
-
-        // printf("Running process with pid=%lu\n", p->pid);
-
         unsigned long pid;
         unsigned long vpn;
 
         assert(p->currInterval != NULL);
-        printf("PID %ld\n" , p->pid);
-        printf("current line %ld\n" , p->currentline);
         // case 1: next line immediately follows the current one
         if (it_contains(p->currInterval->low, p->currInterval->high,
                         p->currentline)) {
-            printf("%s\n", "Next line within current interval.");
             fscanf(tracefile, "%lu %lu\n", &pid, &vpn);
             printf("%lu %lu\n", pid, vpn);
             assert(pid == p->pid);
@@ -104,6 +99,36 @@ void Simulator_runSimulation(FILE* tracefile) {
                 Process_switchStatus(RUNNING, WAITING);
             }
         }
+
+        // 4. Simulate memory reference
+        // get the virtual page-> look up in page table for this proc.
+        VPage* v = PageTable_get(p->pageTable, vpn, pid);
+
+        // Create new v. page if none exists
+        if (v == NULL) {
+            // this is a new allocation
+            // create a new page: v = new page
+        }
+
+        // Hit or miss?
+        if (v->inMemory) {
+            // tell the replacement module it was accessed
+            // continue
+            // else
+            Stat_hit();
+        } else {
+            // need to swap page from disk
+            // block the process
+            // continue
+            // ...when block expires...
+            // tell the replacement module that the page is ready
+            Stat_miss();
+        }
+
+        // 
+
+            
+           
 
 
         // lookup VPN in page table and either fault or perform successful

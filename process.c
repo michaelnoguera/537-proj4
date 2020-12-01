@@ -166,7 +166,6 @@ inline void Process_jumpToNextInterval(Process* p) {
  */
 void Process_free(Process* p) { free(p); }
 
-
 PageTable* PageTable_init() {
     PageTable* pt;
     if ((pt = (PageTable*)malloc(sizeof(PageTable))) == NULL) {

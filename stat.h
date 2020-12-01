@@ -7,4 +7,11 @@ struct stat_t {
     long tpi; // total page ins: number of page faults
 };
 
-void stat_update(); // TODO decide on interface
+// This tick, a hit happened
+void Stat_hit();
+
+// This tick, a miss happened
+void Stat_miss();
+
+// This tick, everything was blocked, so nothing happened
+void Stat_nothing_happened();
