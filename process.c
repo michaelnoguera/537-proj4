@@ -72,6 +72,80 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
     } while ((head = STAILQ_NEXT(head, procs)) != NULL);
 }
 
+
+static PageTable* PageTable_init() {
+    PageTable* pt;
+    if ((pt = (PageTable*)malloc(sizeof(PageTable))) == NULL) {
+        perror("Error allocating memory for page table.");
+        exit(EXIT_FAILURE);
+    }
+    return pt;
+}
+
+static int PageTable_compare(const void* vp1, const void* vp2) {
+    VPage* vp1_page = (VPage*)vp1;
+    VPage* vp2_page = (VPage*)vp2;
+    if (vp1_page->vpn < vp2_page->vpn) {
+        return -1;
+    } else if (vp1_page->vpn > vp2_page->vpn) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static VPage* PageTable_get(PageTable* pt, unsigned long vpn) {
+    VPage* search_query;
+    VPage* search_result;
+
+    search_query = VPage_init(0, vpn);
+
+    if ((search_result = tfind(search_query, pt, PageTable_compare)) == NULL) {
+        VPage_free(search_query);
+        return NULL;
+    } else {
+        return *(VPage**)search_result;
+    }
+}
+
+static int PageTable_add(PageTable* pt, VPage* new) {
+    VPage* search_result;
+    VPage* temp_result;
+
+    new = VPage_init(new->vpn, new->pid);
+
+    if ((search_result = tsearch(new, pt, PageTable_compare)) == NULL) {
+        perror("Error in page table lookup.");
+        exit(EXIT_FAILURE);
+    } else {
+        temp_result = *(VPage**)search_result;
+
+        if (temp_result != new) {
+            return 1; // collision with existing
+        } else {
+            return 0; // success
+        }
+    }
+}
+
+/**
+ * @return page if found, NULL if not 
+ */
+static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
+    VPage* entry_to_remove;
+
+    if ((entry_to_remove = PageTable_get(pt, vpn)) == NULL) {
+        // Entry removal failed. The node was not found in the page table.
+        return NULL;
+    } else {
+        // Entry was found. call tdelete() and remove
+        tdelete(entry_to_remove, pt, PageTable_compare);
+        VPage_free(entry_to_remove);
+        return entry_to_remove;
+    }
+}
+
+
 /**
  * Peek at the status at the head of a given status queue. NULL if none present.
  */
@@ -107,6 +181,7 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->currentPos = lineIntervals->fpos_start;
     p->currInterval = lineIntervals;
 
+    p->pageTable = PageTable_init();
     p->status = NOTSTARTED;
     STAILQ_INSERT_TAIL(&pq[NOTSTARTED], p, procs);
 
@@ -161,87 +236,38 @@ inline void Process_jumpToNextInterval(Process* p) {
     p->currentPos = p->currInterval->fpos_start;
 }
 
+VPage* Process_allocVirtualPage(Process* p, unsigned long vpn) {
+    VPage* v = VPage_init(p->pid, vpn);
+    PageTable_add(p->pageTable, v);
+    return v;
+}
+
+VPage* Process_getVirtualPage(Process* p, unsigned long vpn) {
+    return PageTable_get(p->pageTable, vpn);
+}
+
+bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
+    VPage* v = PageTable_get(p->pageTable, vpn);
+    if (v == NULL) return false;
+    return v->inMemory;
+}
+
+/**
+ * MUST have a free space in memory before calling
+ */
+unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
+    VPage* v = PageTable_get(p->pageTable, vpn);
+    assert(v != NULL && "Can't load null into RAM.");
+    assert(v->inMemory == false && "Page already in RAM.");
+    assert(Memory_hasFreePage() && "Must be free space in memory to add to.");
+    unsigned long ppn = Memory_getFreePage();
+    Memory_loadPage(v, ppn);
+    return v->inMemory;
+
+}
+
 /**
  * Destructs and frees a Process.
  * @param p pointer to heap-alloc'd process
  */
 void Process_free(Process* p) { free(p); }
-
-PageTable* PageTable_init() {
-    PageTable* pt;
-    if ((pt = (PageTable*)malloc(sizeof(PageTable))) == NULL) {
-        perror("Error allocating memory for page table.");
-        exit(EXIT_FAILURE);
-    }
-    return pt;
-}
-
-int PageTable_compare(const void* vp1, const void* vp2) {
-    VPage* vp1_page = (VPage*)vp1;
-    VPage* vp2_page = (VPage*)vp2;
-    if (vp1_page->vpn < vp2_page->vpn) {
-        return -1;
-    } else if (vp1_page->vpn > vp2_page->vpn) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-VPage* PageTable_get(PageTable* pt, int vpn, int pid) {
-    VPage* search_query;
-    VPage* search_result;
-    VPage* temp_result;
-
-    search_query = VPage_init(vpn, pid);
-
-    if ((search_result = tfind(search_query, pt, PageTable_compare)) == NULL) {
-        VPage_free(search_query);
-        return NULL;
-    } else {
-        temp_result = *(VPage**)search_result;
-        if (temp_result->inMemory) {
-            return temp_result;
-        } else {
-            return NULL;
-        }
-    }
-}
-
-int PageTable_add(PageTable* pt, int vpn, int pid, int ppn) {
-    VPage* new_page;
-    VPage* search_result;
-    VPage* temp_result;
-
-    new_page = VPage_init(vpn, pid);
-
-    if ((search_result = tsearch(new_page, pt, PageTable_compare)) == NULL) {
-        perror("Error in page table lookup.");
-        exit(EXIT_FAILURE);
-    } else {
-        temp_result = *(VPage**)search_result;
-
-        if (temp_result != new_page) {
-            // existing node found
-            VPage_free(new_page);
-            return 1;
-        } else {
-            new_page->currentPPN = ppn;
-            return 0;
-        }
-    }
-}
-
-int PageTable_remove(PageTable* pt, int vpn, int pid) {
-    VPage* entry_to_remove;
-
-    if ((entry_to_remove = PageTable_get(pt, vpn, pid)) == NULL) {
-        // Entry removal failed. The node was not found in the page table.
-        return 1;
-    } else {
-        // Entry was found. call tdelete() and remove
-        tdelete(entry_to_remove, pt, PageTable_compare);
-        free(entry_to_remove);
-        return 0;
-    }
-}

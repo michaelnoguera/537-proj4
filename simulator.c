@@ -116,25 +116,27 @@ void Simulator_runSimulation(FILE* tracefile) {
         //VPage* v = PageTable_get(p->pageTable, vpn, pid);
 
         // Create new v. page if none exists
-        /*if (v == NULL) {
+        //if (v == NULL) {
+            //VPage* vnew = VPage_init(pid, vpn);
+            //PageTable_add(p->pageTable, vpn, pid, ppn)
             // this is a new allocation
             // create a new page: v = new page
-        }
+        //}
 
         // Hit or miss?
-        if (v->inMemory) {
+        //if (v->inMemory) {
             // tell the replacement module it was accessed
             // continue
             // else
             // Stat_hit();
-        } else {
+        //} else {
             // need to swap page from disk
             // block the process
             // continue
             // ...when block expires...
             // tell the replacement module that the page is ready
             // Stat_miss();
-        }*/
+        //}*/
 
         // 
 

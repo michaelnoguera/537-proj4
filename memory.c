@@ -53,7 +53,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
     // via indexing
     mem_size = numberOfPhysicalPages;
     allocated = 0;
-    PPage** memory = calloc(mem_size,sizeof(PPage));
+    PPage** memory = calloc(mem_size, sizeof(PPage));
     if (memory == NULL) {
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
@@ -62,7 +62,7 @@ void Memory_init(size_t numberOfPhysicalPages) {
     freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / 32));
 
     // they're meant to be left uninitialized, not like this
-    //for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
+    // for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
 }
 
 /**
@@ -124,6 +124,9 @@ ul64 Memory_getFreePage() {
         int fz_ind = bv_ffz(freelist[fl_ind]);
         if (fz_ind >= 0) { return fl_ind * 32 + fz_ind; }
     }
+    perror(
+      "WARN: Tried to get free page when none are avaliable. Use "
+      "Memory_hasFreePage to check first.");
     return mem_size + 1; // out-of-bounds value as sentinel
 }
 
@@ -131,12 +134,6 @@ ul64 Memory_getFreePage() {
  * @return true if there is a free page in memory
  */
 bool Memory_hasFreePage() { return mem_size == allocated; }
-
-/**
- * Load a page in to memory by calling replacement module to find its spot
- * @return 0 upon success, 1 upon failure
- */
-int Memory_load(VPage* virtualPage);
 
 /**
  * Constructs a new Virtual Page given it's virtual identifier.

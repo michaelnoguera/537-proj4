@@ -64,9 +64,4 @@ bool Process_hasLinesRemaining(const Process* p);
 void Process_jumpToNextInterval(Process* p);
 void Process_free(Process* p);
 
-PageTable* PageTable_init();
-VPage* PageTable_get(PageTable* pt, int vpn, int pid);
-int PageTable_add(PageTable* pt, int vpn, int pid, int ppn);
-int PageTable_remove(PageTable* pt, int vpn, int pid);
-
 #endif
