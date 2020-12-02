@@ -8,6 +8,7 @@
 #include "simulator.h"
 #include "intervaltree.h"
 #include "replace.h"
+#include "stat.h"
 #include <assert.h>
 
 enum {
@@ -17,6 +18,9 @@ enum {
 
 static_assert(CLOCK_TICK > 0, "Clock tick must be greater than zero.");
 static_assert(DISK_PENALTY > 0, "Disk penalty must be greater than zero.");
+static_assert(DISK_PENALTY % CLOCK_TICK == 0,
+              "Disk penalty must be a multiple of clock tick, else ticks won't "
+              "ever add up to a completed I/O.");
 
 static inline bool notDone() {
     return Process_existsWithStatus(RUNNING)
@@ -41,19 +45,28 @@ void Simulator_runSimulation(FILE* tracefile) {
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
             // printf("%s\n", "Checking on blocked processes.");
-            if (--(Process_peek(BLOCKED)->waitTime) == 0) {
+            if ((Process_peek(BLOCKED)->waitTime) == 0) {
                 Process* p = Process_peek(BLOCKED);
-        
-                assert(p->waiting_VPN != NULL);
+                printf("Process %lu is done waiting!\n", p->pid);
+
+                assert(p->waitingOnPage != NULL);
                 int ppn;
                 if (Memory_hasFreePage()) {
+                    printf("%s\n", "Memory has an empty spot.");
                     ppn = Memory_getFreePage();
                 } else {
-                    // ppn = Replace_getNewPage(p->waiting_VPN);
+                    printf("%s\n", "No empty spot in memory, need to evict.");
+                    ppn = Replace_getPageToEvict();
+                    printf("Victim = %i\n", ppn);
+                    Memory_evictPage(ppn);
                 }
-                Memory_loadPage(p->waiting_VPN, ppn);
+                Memory_loadPage(p->waitingOnPage, ppn);
+                printf("Loaded virtual page %lu into ppn %i\n", p->waitingOnPage->vpn, ppn);
+
                 Process_switchStatus(RUNNING, WAITING); // i/o completed
                 Process_switchStatus(BLOCKED, RUNNING);
+            } else {
+                Process_peek(BLOCKED)->waitTime -= CLOCK_TICK;
             }
         }
 
@@ -79,7 +92,8 @@ void Simulator_runSimulation(FILE* tracefile) {
             // We just got a new process, update state
             assert(Process_existsWithStatus(RUNNING));
             p = Process_peek(RUNNING);
-            printf("switching to pid=%lu at position=%lu\n", p->pid, p->currentPos);
+            printf("--> now running pid=%lu at position=%lu\n", p->pid,
+                   p->currentPos);
             fseek(tracefile, p->currentPos, SEEK_SET);
         }
 
@@ -120,34 +134,27 @@ void Simulator_runSimulation(FILE* tracefile) {
 
         // Create new v. page if none exists
         if (v == NULL) {
-            printf("%s\n", "new page, allocating");
+            printf("\t%s\n", "new page, allocating virtual page");
             v = Process_allocVirtualPage(p, vpn);
             assert(v != NULL);
+            assert(Process_getVirtualPage(p, vpn) == v);
         }
 
         if (Process_virtualPageInMemory(p, vpn)) {
-            printf("%s\n", "hit");
+            printf("\t%s\n", "physical memory hit");
             // tell the replacement module it was accessed
             // continue
             // else
-            // Stat_hit();
+            Stat_hit();
         } else {
-            printf("%s\n", "miss");
-            if (Memory_hasFreePage()) {
-                Process_loadVirtualPage(p, vpn);
-            }
-            // need to swap page from disk
-            // block the process
-            // continue
-            // ...when block expires...
-            // tell the replacement module that the page is ready
-            // Stat_miss();
+            printf("\t%s\n", "physical memory miss --> block & switch!");
+            Process_switchStatus(RUNNING, BLOCKED);
+            p->waitTime = DISK_PENALTY;
+            p->waitingOnPage = v;
+            Stat_miss();
         }
 
-        // 
-
-            
-           
+        //
 
 
         // lookup VPN in page table and either fault or perform successful

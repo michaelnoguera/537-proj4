@@ -60,7 +60,7 @@ else
 	gcc -c -o $@ $< $(CFLAGS)
 endif
 
-memory.o: memory.c memory.h process.h
+memory.o: memory.c memory.h process.h replace.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else

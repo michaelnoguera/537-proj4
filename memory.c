@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "replace.h"
 #include <assert.h>
 #include <stdio.h>
 #include <sys/queue.h>
@@ -53,30 +54,35 @@ void Memory_init(size_t numberOfPhysicalPages) {
     // via indexing
     mem_size = numberOfPhysicalPages;
     allocated = 0;
-    PPage** memory = calloc(mem_size, sizeof(PPage));
+    PPage** memory = malloc(mem_size * sizeof(PPage));
     if (memory == NULL) {
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
     }
 
-    freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / 32));
+    freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / sizeof(unsigned int)));
 
-    // they're meant to be left uninitialized, not like this
-    // for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
+    // initialize all pages
+    for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
 }
 
 /**
  * Accesses the physical page with a given ppn
  * @param ppn index into memory
- * @return PPage if present, NULL if not
+ * @return PPage at that index
  */
-PPage* Memory_getPPage(ul64 ppn) { return memory[ppn]; }
+PPage* Memory_getPPage(ul64 ppn) {
+    if (ppn > mem_size - 1) {
+        perror("ERROR: Tried to access a physical page that is out of bounds");
+        exit(EXIT_FAILURE);
+    }
+    return memory[ppn];
+}
 
 /**
  * Accesses the virtual page with a given ppn
  */
 VPage* Memory_getVPage(ul64 ppn) {
-    assert(memory[ppn] != NULL);
     return memory[ppn]->virtualPage;
 }
 
@@ -84,16 +90,17 @@ VPage* Memory_getVPage(ul64 ppn) {
  * Frees the page at a given ppn by sending the virtual page to backing store
  */
 void Memory_evictPage(ul64 ppn) {
-    PPage* page = memory[ppn];
-    assert(page != NULL);
-    free(page); // free page
+    if (ppn > mem_size - 1) {
+        perror("ERROR: Tried to access a physical page that is out of bounds");
+        exit(EXIT_FAILURE);
+    }
+    memory[ppn]->virtualPage = NULL;
 
     // remove page from free list (mark as clear)
     // XOR with an integer containing 1 at the offset given by PPN
     // has effect of flipping at the offset position
     freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn);
     allocated--;        // tick allocated counter
-    memory[ppn] = NULL; // finally nullify at memory array
 }
 
 /**
@@ -103,16 +110,18 @@ void Memory_evictPage(ul64 ppn) {
  * @param PPN location to load in memory
  */
 void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
-    PPage* page = Page_init(ppn);
-    page->virtualPage = virtualPage;
-    memory[ppn] = page;
+    if (ppn > mem_size - 1) {
+        perror("ERROR: Tried to access a physical page that is out of bounds");
+        exit(EXIT_FAILURE);
+    }
+    assert(memory[ppn]->virtualPage == NULL);
+    memory[ppn]->virtualPage = virtualPage;
 
     // add page to free list (mark as taken)
     // OR with an integer containing 1 at the offset given by PPN
     // has effect of setting to 1 at the offset position
     freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
     allocated++;        // tick allocated counter
-    memory[ppn] = NULL; // finally nullify at memory array
 }
 
 /**
@@ -161,7 +170,7 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
 
     v->pid = pid;
     v->vpn = vpn;
-    // v->overhead = Replace_initOverhead();
+    v->overhead = Replace_initOverhead();
 
     v->inMemory = false;
 
@@ -169,6 +178,6 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
 }
 
 void VPage_free(VPage* vp) {
-    // Replace_freeOverhead(vp->overhead);
+    Replace_freeOverhead(vp->overhead);
     free(vp);
 }

@@ -12,9 +12,9 @@
 #include "simulator.h"
 #include "trace_parser.h"
 #include "replace.h"
+#include "stat.h"
 
 #include <getopt.h>
-
 
 /** Parses args */
 inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
@@ -59,6 +59,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
                 "WARN: memory size not specified, defaulting to 1 MB\n");
         *memsize=1;
     }
+    *memsize *= 8*1024; // measured in MB
 
     if (*filename == NULL) {
         fprintf(stderr,
@@ -80,11 +81,17 @@ int main(int argc, char** argv) {
     char* filename = NULL;
     FILE* tracefile = NULL;
     parseArgs(argc, argv, &memsize, &pagesize, &filename, &tracefile);
-
+    assert(memsize > 0);
+    assert(pagesize > 0);
+    assert(filename != NULL);
+    assert(tracefile != NULL);
+    
     // 2. Setup
-    int numberOfPhysicalPages = memsize / pagesize;
+    int numberOfPhysicalPages = memsize/pagesize;
+    assert(numberOfPhysicalPages > 0);
     Replace_initReplacementModule(numberOfPhysicalPages);
     Memory_init(numberOfPhysicalPages);
+    Stat_init();
     ProcessQueues_init();
 
     // 3. Read "first pass", ennumerating pids and building interval tree

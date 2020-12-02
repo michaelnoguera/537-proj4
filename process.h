@@ -34,7 +34,7 @@ typedef struct process_t {
 
     // Wait info
     unsigned long waitTime; // timer for a disk operation in ticks
-    VPage* waiting_VPN;
+    VPage* waitingOnPage;
 
     // Map of VPN->PPN
     PageTable pageTable;

@@ -118,8 +118,6 @@ static int PageTable_add(PageTable* pt, VPage* new) {
     VPage* search_result;
     VPage* temp_result;
 
-    new = VPage_init(new->vpn, new->pid);
-
     if ((search_result = tsearch(new, pt, PageTable_compare)) == NULL) {
         perror("Error in page table lookup.");
         exit(EXIT_FAILURE);
@@ -181,7 +179,7 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->currentline = firstline;
     p->lastline = lastline;
     p->waitTime = 0;
-    p->waiting_VPN = NULL;
+    p->waitingOnPage = NULL;
     p->lineIntervals = lineIntervals;
 
     p->currentPos = lineIntervals->fpos_start;
@@ -268,7 +266,7 @@ bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
 unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
     assert(p != NULL);
     VPage* v = PageTable_get(p->pageTable, vpn);
-    assert(v != NULL && "Can't load null into RAM.");
+    assert(v != NULL && "Can't load null page into RAM.");
     assert(v->inMemory == false && "Page already in RAM.");
     assert(Memory_hasFreePage() && "Must be free space in memory to add to.");
     unsigned long ppn = Memory_getFreePage();
