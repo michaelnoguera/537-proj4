@@ -72,6 +72,7 @@ void Simulator_runSimulation(FILE* tracefile) {
                 Memory_loadPage(p->waitingOnPage, ppn);
                 printf("Loaded virtual page %lu into ppn %i\n",
                        p->waitingOnPage->vpn, ppn);
+                
                 p->waitingOnPage = NULL;
 
                 Process_switchStatus(RUNNING, WAITING); // i/o completed
@@ -88,7 +89,6 @@ void Simulator_runSimulation(FILE* tracefile) {
             for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
                 ProcessQueue_printQueue(i);
             }
-            assert(false);
         }
 
         // 2. If there isn't a current process, choose the next one
@@ -101,6 +101,9 @@ void Simulator_runSimulation(FILE* tracefile) {
             } else if (Process_existsWithStatus(BLOCKED)) {
                 // TODO if time, implement magic jumping through time
                 // Stat_nothing_happened();
+                assert((Process_peek(BLOCKED))->waitTime != 0);
+                time += CLOCK_TICK * (Process_peek(BLOCKED))->waitTime - 1;
+                Process_peek(BLOCKED)->waitTime = 0;
                 continue; // all blocked, short-circuit to next cycle
             } else {
                 perror(
@@ -135,9 +138,15 @@ void Simulator_runSimulation(FILE* tracefile) {
             if (p->currInterval->right == NULL) {
                 printf("%s\n", "This process finished!.");
                 Process_switchStatus(RUNNING, FINISHED);
+                if (p->pid == 30) {
+                    printf("process 30 is DONE");
+                }
+                if(p->pid == 2) {
+                    printf("process 2 is DONE");
+                }
                 // FREE ALL PAGES THIS PROCESSED USED HERE
                 // TODO make sure Process_free() works as intended;
-                Process_free(p);
+                //Process_free(p);
                 p = NULL;
                 continue;
             } else {
@@ -172,6 +181,9 @@ void Simulator_runSimulation(FILE* tracefile) {
               ftell(tracefile); // save location for context switch
             Process_switchStatus(RUNNING, BLOCKED);
             p->waitTime = DISK_PENALTY;
+            if (p->pid == 30) {
+                printf("um ok");
+            }
             p->waitingOnPage = v;
             Stat_miss();
             continue;
