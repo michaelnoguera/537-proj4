@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
+static int numProcs_Waiting = 0;
 
 void ProcessQueues_init() {
     STAILQ_INIT(&pq[RUNNING]); // should only ever have one element
@@ -25,9 +26,14 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
     } while ((head = STAILQ_NEXT(head, procs)) != NULL);
 }
 
+int ProcessQueue_numWaitingProcs() {
+    return numProcs_Waiting;
+}
+
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[WAITING]) {
         ProcessQueue_enqueuePriority(p, q);
+        numProcs_Waiting++;
         STAILQ_INSERT_TAIL(q, p,
                            procs); // TODO replace with sorted insert function
     } else {

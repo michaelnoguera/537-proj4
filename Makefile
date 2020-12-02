@@ -9,8 +9,8 @@ all: pfsim-random
 
 # build executable
 # TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-pfsim-random: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace_random.o
-	gcc -o pfsim-random main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace.h
+pfsim-random: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace_random.o stat.o
+	gcc -o pfsim-random main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o stat.o
 
 replace_random.o: replace.h memory.h process.h
 ifeq ($(DEBUG),true)
@@ -67,6 +67,14 @@ ifeq ($(DEBUG),true)
 else
 	gcc -c -o $@ $< $(CFLAGS)
 endif
+
+stat.o: stat.c memory.h process.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
 
 # Run test framework
 test: all

@@ -44,6 +44,8 @@ void ProcessQueues_init(); // global static variable manages process states
 
 void ProcessQueue_printQueue(ProcessStatus q_s);
 
+int ProcessQueue_numWaitingProcs();
+
 // Use of BSD tail queue based on queue(3) manpage
 // and "Minimal example of TAILQ usage out of <sys/queue.h> library"
 // (https://stackoverflow.com/q/22315213/11639533)

@@ -136,6 +136,16 @@ ul64 Memory_getFreePage() {
 bool Memory_hasFreePage() { return mem_size == allocated; }
 
 /**
+ * @return the number of allocated pages, given by the allocated variable.
+ */
+int Memory_howManyAllocPages() { return allocated; }
+
+/**
+ * @return the size of memory in pages
+ */
+int Memory_getTotalSize() { return mem_size; }
+
+/**
  * Constructs a new Virtual Page given it's virtual identifier.
  * Used by Page Table to get virtual pages.
  * @param pid process id
