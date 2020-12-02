@@ -243,6 +243,7 @@ VPage* Process_allocVirtualPage(Process* p, unsigned long vpn) {
 }
 
 VPage* Process_getVirtualPage(Process* p, unsigned long vpn) {
+    assert(p != NULL);
     return PageTable_get(p->pageTable, vpn);
 }
 
@@ -254,16 +255,21 @@ bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
 
 /**
  * MUST have a free space in memory before calling
+ * @param p process that the page belongs to
+ * @param vpn virtual page identifier
+ * @return ppn where the page was inserted
  */
 unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
+    assert(p != NULL);
     VPage* v = PageTable_get(p->pageTable, vpn);
     assert(v != NULL && "Can't load null into RAM.");
     assert(v->inMemory == false && "Page already in RAM.");
     assert(Memory_hasFreePage() && "Must be free space in memory to add to.");
     unsigned long ppn = Memory_getFreePage();
     Memory_loadPage(v, ppn);
-    return v->inMemory;
-
+    v->inMemory = true;
+    v->currentPPN = ppn;
+    return ppn;
 }
 
 /**

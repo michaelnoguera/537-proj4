@@ -11,6 +11,7 @@
 #include "process.h"
 #include "simulator.h"
 #include "trace_parser.h"
+#include "replace.h"
 
 #include <getopt.h>
 
@@ -82,8 +83,8 @@ int main(int argc, char** argv) {
 
     // 2. Setup
     int numberOfPhysicalPages = memsize / pagesize;
+    Replace_initReplacementModule(numberOfPhysicalPages);
     Memory_init(numberOfPhysicalPages);
-
     ProcessQueues_init();
 
     // 3. Read "first pass", ennumerating pids and building interval tree
