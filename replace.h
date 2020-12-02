@@ -1,5 +1,6 @@
 #include "memory.h"
 
+
 /**
  * Initializes general replacement module overhead, if any.
  * @details run before page allocation starts
@@ -16,7 +17,7 @@ void* Replace_initOverhead();
  * A generic destructor method for overhead struct
  * @param o_ptr A void* holding the overhead struct
  */
-void Replace_freeOverhead(void* o_ptr);
+void Replace_freeOverhead(__attribute__((unused))void* o_ptr);
 
 /**
  * Cleans up module overhead

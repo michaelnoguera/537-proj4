@@ -5,13 +5,12 @@ static int numPages;
 
 void Replace_initReplacementModule(int numberOfPhysicalPages) {
     numPages = numberOfPhysicalPages;
-    return NULL;
 }
 
 void* Replace_initOverhead() { return NULL; }
-void Replace_freeOverhead(void* o_ptr) { return; }
+void Replace_freeOverhead(__attribute__((unused)) void* o_ptr) { return; }
 
-void Replace_updateOverhead(void* o_ptr) { return; }
+void Replace_updateOverhead(__attribute__((unused)) void* o_ptr) { return; }
 
 /**
  * Randomly chooses a page to evict.
@@ -25,5 +24,4 @@ void Replace_updateOverhead(void* o_ptr) { return; }
  */
 unsigned long Replace_getPageToEvict() { return rand() % numPages; }
 
-
-void* Replace_freeOverhead() { return; }
+void Replace_freeReplacementModule() { return; }
