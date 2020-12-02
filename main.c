@@ -89,15 +89,15 @@ int main(int argc, char** argv) {
     // 2. Setup
     int numberOfPhysicalPages = memsize/pagesize;
     assert(numberOfPhysicalPages > 0);
-    Replace_initReplacementModule(numberOfPhysicalPages);
     Memory_init(numberOfPhysicalPages);
+    Replace_initReplacementModule(numberOfPhysicalPages);
     Stat_init();
     ProcessQueues_init();
 
     // 3. Read "first pass", ennumerating pids and building interval tree
     first_pass(tracefile);
 
-    // ProcessQueue_printQueue(NOTSTARTED);
+    //ProcessQueue_printQueue(NOTSTARTED);
 
     // 3. RUN SIMULATION
     Simulator_runSimulation(tracefile);

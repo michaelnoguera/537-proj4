@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/pfsim-random",
-            "args": ["smallmix.addrtrace"],
+            "args": ["smallmix.addrtrace", "-p 512", "-m 4"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

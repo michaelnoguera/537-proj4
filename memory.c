@@ -42,6 +42,8 @@ static PPage* Page_init(ul64 ppn) {
     p->ppn = ppn;
     p->virtualPage = NULL;
 
+    memory[ppn] = p;
+
     return p;
 }
 
@@ -54,13 +56,13 @@ void Memory_init(size_t numberOfPhysicalPages) {
     // via indexing
     mem_size = numberOfPhysicalPages;
     allocated = 0;
-    PPage** memory = malloc(mem_size * sizeof(PPage));
+    memory = malloc(mem_size * sizeof(PPage));
     if (memory == NULL) {
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
     }
 
-    freelist = (freelist_t)malloc(sizeof(unsigned int) * (mem_size / sizeof(unsigned int)));
+    freelist = (freelist_t)calloc(sizeof(unsigned int), (mem_size / 32));
 
     // initialize all pages
     for (size_t p = 0; p < mem_size; p++) { Page_init(p); }
@@ -90,16 +92,17 @@ VPage* Memory_getVPage(ul64 ppn) {
  * Frees the page at a given ppn by sending the virtual page to backing store
  */
 void Memory_evictPage(ul64 ppn) {
+    assert(memory != NULL);
     if (ppn > mem_size - 1) {
         perror("ERROR: Tried to access a physical page that is out of bounds");
         exit(EXIT_FAILURE);
     }
+    assert(memory[ppn] != NULL && "Physical page should always exist.");
     memory[ppn]->virtualPage = NULL;
 
     // remove page from free list (mark as clear)
-    // XOR with an integer containing 1 at the offset given by PPN
-    // has effect of flipping at the offset position
-    freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn);
+    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn); // set high
+    freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn); // flip to low
     allocated--;        // tick allocated counter
 }
 
@@ -114,8 +117,12 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
         perror("ERROR: Tried to access a physical page that is out of bounds");
         exit(EXIT_FAILURE);
     }
+    assert(virtualPage != NULL);
     assert(memory[ppn]->virtualPage == NULL);
     memory[ppn]->virtualPage = virtualPage;
+
+    virtualPage->inMemory = true;
+    virtualPage->currentPPN = ppn;
 
     // add page to free list (mark as taken)
     // OR with an integer containing 1 at the offset given by PPN
@@ -128,8 +135,7 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
  * @return the ppn of the next free page, or an out of bounds index if none
  */
 ul64 Memory_getFreePage() {
-    ul64 fl_ind = 0;
-    for (fl_ind = 0; fl_ind < mem_size; fl_ind++) {
+    for (ul64 fl_ind = 0; fl_ind < mem_size; fl_ind++) {
         int fz_ind = bv_ffz(freelist[fl_ind]);
         if (fz_ind >= 0) { return fl_ind * 32 + fz_ind; }
     }

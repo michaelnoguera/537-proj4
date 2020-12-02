@@ -17,11 +17,21 @@ void ProcessQueues_init() {
 
 /** Insert to a sorted priority queue*/
 static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
+    assert(p != NULL && q != NULL);
+
+    // edge case: empty queue
+    if (STAILQ_EMPTY(q)) {
+        STAILQ_INSERT_HEAD(q, p, procs);
+        return;
+    }
+
     Process* head = STAILQ_FIRST(q);
 
     do {
-        if (head == NULL || (p->currentline <= head->currentline)) {
+        assert(head != NULL);
+        if (p->currentline <= head->currentline) {
             STAILQ_INSERT_AFTER(q, p, head, procs);
+            return;
         }
     } while ((head = STAILQ_NEXT(head, procs)) != NULL);
 }
@@ -58,14 +68,17 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
         /*case NOTSTARTED:
             printf("NOTSTARTED\n");
             break;*/
-        case NUM_OF_PROCESS_STATUSES:
-            printf("NUM_OF_PROCESS_STATUSES (not a valid queue)");
-            break;
         case FINISHED:
             printf("FINISHED\n");
             break;
+        case NUM_OF_PROCESS_STATUSES:
+            printf("NUM_OF_PROCESS_STATUSES (not a valid queue)");
+            break;
     }
-    if (head == NULL) printf("Empty Queue \n");
+    if (STAILQ_EMPTY(&pq[q_s]) || head == NULL) {
+        printf("Empty Queue \n");
+        return;
+    }
     int i = 0;
     do {
         printf(
@@ -262,7 +275,7 @@ bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
  * @param p process that the page belongs to
  * @param vpn virtual page identifier
  * @return ppn where the page was inserted
- */
+ *
 unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
     assert(p != NULL);
     VPage* v = PageTable_get(p->pageTable, vpn);
@@ -274,7 +287,7 @@ unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
     v->inMemory = true;
     v->currentPPN = ppn;
     return ppn;
-}
+}*/
 
 /**
  * Destructs and frees a Process.
