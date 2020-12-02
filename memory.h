@@ -87,6 +87,16 @@ ul64 Memory_getFreePage();
 bool Memory_hasFreePage();
 
 /**
+ * @return the number of allocated pages, given by the allocated variable.
+ */
+int Memory_howManyAllocPages();
+
+/**
+ * @return the size of memory in pages
+ */
+int Memory_getTotalSize();
+
+/**
  * Constructs a new Virtual Page given it's virtual identifier
  * @param pid process id
  * @param vpn virtual page number
