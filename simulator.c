@@ -77,6 +77,7 @@ void Simulator_runSimulation(FILE* tracefile) {
             }
 
             // We just got a new process, update state
+            assert(Process_existsWithStatus(RUNNING));
             p = Process_peek(RUNNING);
             printf("switching to pid=%lu at position=%lu\n", p->pid, p->currentPos);
             fseek(tracefile, p->currentPos, SEEK_SET);
@@ -85,7 +86,7 @@ void Simulator_runSimulation(FILE* tracefile) {
         // 3. Find line to run next
         unsigned long pid;
         unsigned long vpn;
-
+        assert(p != NULL);
         assert(p->currInterval != NULL);
         // case 1: next line immediately follows the current one
         if (it_contains(p->currInterval->low, p->currInterval->high,
@@ -104,39 +105,44 @@ void Simulator_runSimulation(FILE* tracefile) {
                 // TODO make sure Process_free() works as intended;
                 Process_free(p);
                 p = NULL;
+                continue;
             } else {
                 printf("%s\n", "Context switch!");
                 Process_jumpToNextInterval(p);
                 Process_switchStatus(RUNNING, WAITING);
+                continue;
             }
         }
 
         // 4. Simulate memory reference
         // get the virtual page-> look up in page table for this proc.
-        //VPage* v = PageTable_get(p->pageTable, vpn, pid);
+        VPage* v = Process_getVirtualPage(p, vpn);
 
         // Create new v. page if none exists
-        //if (v == NULL) {
-            //VPage* vnew = VPage_init(pid, vpn);
-            //PageTable_add(p->pageTable, vpn, pid, ppn)
-            // this is a new allocation
-            // create a new page: v = new page
-        //}
+        if (v == NULL) {
+            printf("%s\n", "new page, allocating");
+            v = Process_allocVirtualPage(p, vpn);
+            assert(v != NULL);
+        }
 
-        // Hit or miss?
-        //if (v->inMemory) {
+        if (Process_virtualPageInMemory(p, vpn)) {
+            printf("%s\n", "hit");
             // tell the replacement module it was accessed
             // continue
             // else
             // Stat_hit();
-        //} else {
+        } else {
+            printf("%s\n", "miss");
+            if (Memory_hasFreePage()) {
+                Process_loadVirtualPage(p, vpn);
+            }
             // need to swap page from disk
             // block the process
             // continue
             // ...when block expires...
             // tell the replacement module that the page is ready
             // Stat_miss();
-        //}*/
+        }
 
         // 
 
