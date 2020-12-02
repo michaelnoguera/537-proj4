@@ -75,20 +75,22 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
             printf("NUM_OF_PROCESS_STATUSES (not a valid queue)");
             break;
     }
-    if (STAILQ_EMPTY(&pq[q_s]) || head == NULL) {
+    if (STAILQ_EMPTY(&pq[q_s])) {
         printf("Empty Queue \n");
         return;
     }
-    int i = 0;
-    do {
+    if (head == NULL) {
+        perror("WARN: Queue has null head, but is not empty?");
+        return;
+    }
+    for (int i = 0; head != NULL; i++, head = STAILQ_NEXT(head, procs)) {
         printf(
-          "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m pid: %ld start: "
+          "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m (%p) pid: %ld start: "
           "%ld end: %ld \x1B[0m, INTERVALS: ",
-          i, head->pid, head->firstline, head->lastline);
+          i, (void*)head, head->pid, head->firstline, head->lastline);
         it_print(head->lineIntervals);
         printf("\n");
-        i++;
-    } while ((head = STAILQ_NEXT(head, procs)) != NULL);
+    }
 }
 
 
@@ -239,8 +241,15 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
  * trace lines have completed
  */
 inline bool Process_hasLinesRemaining(const Process* p) {
-    assert(p->currInterval != NULL);
-    return (p->currInterval->right == NULL);
+    return (p->currentline == p->lastline);
+}
+
+/**
+ * @return true if there is another interval of trace lines to run for this process
+ * or false if the process is in/finished with its last one
+ */
+inline bool Process_hasIntervalsRemaining(Process* p) {
+    return (p->currInterval->right != NULL);
 }
 
 /**

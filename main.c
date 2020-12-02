@@ -59,7 +59,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
                 "WARN: memory size not specified, defaulting to 1 MB\n");
         *memsize=1;
     }
-    *memsize *= 8*1024; // measured in MB
+    *memsize *= 0x100000; // measured in MB
 
     if (*filename == NULL) {
         fprintf(stderr,
