@@ -26,32 +26,26 @@ void Stat_init() {
 }
 
 // No matter what happens this tick, this will still be called and still applies.
-void Stat_default() {
-    ProgStats->tmu += Memory_howManyAllocPages();
+void Stat_default(unsigned long numTicks) {
+    ProgStats->tmu += Memory_howManyAllocPages() * numTicks;
     // ONLY ONE PROCESS CAN BE IN THE 'RUNNING' QUEUE AT A TIME!
-    ProgStats->trp += ProcessQueue_numWaitingProcs() + 
-                    ((int)Process_existsWithStatus(RUNNING));
+    ProgStats->trp += (ProcessQueue_numWaitingProcs() + 
+                    ((int)Process_existsWithStatus(RUNNING))) * numTicks;
 }
 
 // This tick, a hit happened
 void Stat_hit() {
     ProgStats->tmr += 1;
-    Stat_default();
 }
 
 // This tick, a miss happened
 void Stat_miss() {
     ProgStats->tpi += 1;
-    Stat_default();
-}
-
-// This tick, everything was blocked, so nothing happened
-void Stat_nothing_happened() {
-    Stat_default();
 }
 
 // Print the stats out directly, given an end time for the program.
 void Stat_printStats(unsigned long time) {
+    printf("%ld", ProgStats->tmu);
     float amu = ProgStats->tmu / time;
     float arp = ProgStats->trp / time;
 

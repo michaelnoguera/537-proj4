@@ -19,14 +19,14 @@ struct stat_t {
 // Initialize stat structure
 void Stat_init();
 
+// No matter what happens this tick, this will still be called and still applies.
+void Stat_default(unsigned long numTicks);
+
 // This tick, a hit happened
 void Stat_hit();
 
 // This tick, a miss happened
 void Stat_miss();
-
-// This tick, everything was blocked, so nothing happened
-void Stat_nothing_happened();
 
 // Print the stats out directly, given an end time for the program.
 void Stat_printStats(unsigned long time);

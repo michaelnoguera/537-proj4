@@ -25,7 +25,7 @@ static inline unsigned int bv_ofs(ul64 n) { return n % 32; }
 // finds the index of the first 0 (unallocated) in a freelist chunk
 // MSB indexed starting at 0, -1 if there are no 0s
 static inline int bv_ffz(unsigned int n) {
-    return (n == 0) ? -1 : __builtin_clz(~n);
+    return (~n == 0) ? -1 : ((n == 0) ? 0 : 32 - __builtin_clz(n));
 }
 
 /**
@@ -136,8 +136,9 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
  */
 ul64 Memory_getFreePage() {
     for (ul64 fl_ind = 0; fl_ind < mem_size; fl_ind++) {
+        printf("\x1B[34m %d \n\x1B[0m", freelist[fl_ind]);
         int fz_ind = bv_ffz(freelist[fl_ind]);
-        if (fz_ind >= 0) { return fl_ind * 32 + fz_ind; }
+        if (fz_ind >= 0) { printf("\x1B[35m %d %d \n\x1B[0m", fl_ind * 32 + fz_ind, fz_ind); return fl_ind * 32 + fz_ind; }
     }
     perror(
       "WARN: Tried to get free page when none are avaliable. Use "
@@ -148,7 +149,10 @@ ul64 Memory_getFreePage() {
 /**
  * @return true if there is a free page in memory
  */
-bool Memory_hasFreePage() { return mem_size == allocated; }
+bool Memory_hasFreePage() { 
+    printf("\x1B[35m allocated pages: %d \n total pages: %d \n\x1B[0m", allocated, mem_size);
+    return mem_size != allocated;
+}
 
 /**
  * @return the number of allocated pages, given by the allocated variable.

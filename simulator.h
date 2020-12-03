@@ -9,4 +9,4 @@
 #include "process.h"
 #include "trace_parser.h"
 
-void Simulator_runSimulation(FILE* tracefile);
+unsigned long Simulator_runSimulation(FILE* tracefile);

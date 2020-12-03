@@ -78,8 +78,8 @@ static inline void Simulator_loadPendingPage(Process* p) {
     p->waitingOnPage = NULL;
 }
 
-void Simulator_runSimulation(FILE* tracefile) {
-    unsigned int time = 0; // time in nanoseconds
+unsigned long Simulator_runSimulation(FILE* tracefile) {
+    unsigned long time = 0; // time in nanoseconds
 
     // unsigned long currentline = 1;
     assert(tracefile != NULL && "tracefile can't be null");
@@ -89,6 +89,7 @@ void Simulator_runSimulation(FILE* tracefile) {
     while (notDone()) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
+        Stat_default(1);
 
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
@@ -132,7 +133,7 @@ void Simulator_runSimulation(FILE* tracefile) {
                 perror(
                   "Main loop did not terminate when it should have - check "
                   "while condition"); // TODO delete this debug statement
-                return;               // everything's done, exit loop
+                return time;               // everything's done, exit loop
             }
         } else if (Process_existsWithStatus(BLOCKED)
                    && (Process_peek(BLOCKED)->waitTime) == 0) {
@@ -243,5 +244,5 @@ void Simulator_runSimulation(FILE* tracefile) {
     }
 
     printf("%s\n", "===DONE WITH SIMULATION===");
-    return;
+    return time;
 }

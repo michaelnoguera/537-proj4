@@ -100,7 +100,8 @@ int main(int argc, char** argv) {
     //ProcessQueue_printQueue(NOTSTARTED);
 
     // 3. RUN SIMULATION
-    Simulator_runSimulation(tracefile);
+    unsigned long exit_time = Simulator_runSimulation(tracefile);
+    Stat_printStats(exit_time);
 
     return 0;
 }

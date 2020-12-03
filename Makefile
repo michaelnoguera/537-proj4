@@ -2,15 +2,26 @@
 
 CFLAGS=-Wall -Wextra -pedantic -std=gnu11
 SCAN_BUILD_DIR=scan-build-out
+COMMON_MODULES=main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o stat.o
 
 .PHONY:clean test all scan-build scan-view
 
-all: pfsim-random
+all: pfsim-random pfsim-clock
 
 # build executable
-# TODO: Make separate binary targets for each scheduling algorithm. Those haven't been created yet though, so this is a placeholder
-pfsim-random: main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace-random.o stat.o
-	gcc -o pfsim-random main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o replace-random.o stat.o
+pfsim-clock: $(COMMON_MODULES) replace-clock.o
+	gcc -o pfsim-clock $(COMMON_MODULES) replace-clock.o
+
+pfsim-random: $(COMMON_MODULES) replace-random.o
+	gcc -o pfsim-random $(COMMON_MODULES) replace-random.o
+
+replace-clock.o: replace-clock.c replace.h memory.h process.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
 replace-random.o: replace-random.c replace.h memory.h process.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
