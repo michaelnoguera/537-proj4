@@ -75,10 +75,10 @@ void Simulator_runSimulation(FILE* tracefile) {
                 
                 p->waitingOnPage = NULL;
 
-                Process_switchStatus(RUNNING, WAITING); // i/o completed
+                Process_switchStatus(RUNNING,
+                                     WAITING); // i/o completed, interrupt
                 Process_switchStatus(BLOCKED, RUNNING);
                 Simulator_jumpInFile(tracefile, &p);
-
             } else {
                 Process_peek(BLOCKED)->waitTime -= CLOCK_TICK;
             }
@@ -118,6 +118,12 @@ void Simulator_runSimulation(FILE* tracefile) {
         }
 
         assert(Process_existsWithStatus(RUNNING));
+        if (Process_peek(RUNNING)->waitTime != 0) {
+            for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
+                ProcessQueue_printQueue(i);
+            }
+            assert(false);
+        }
 
         // 3. Find line to run next
         unsigned long pid;
@@ -135,24 +141,15 @@ void Simulator_runSimulation(FILE* tracefile) {
         } else {
             // Intervals cannot overlap, so the next greater interval will
             // appear directly to the right of a given node
-            if (p->currInterval->right == NULL) {
-                printf("%s\n", "This process finished!.");
-                Process_switchStatus(RUNNING, FINISHED);
-                if (p->pid == 30) {
-                    printf("process 30 is DONE");
-                }
-                if(p->pid == 2) {
-                    printf("process 2 is DONE");
-                }
-                // FREE ALL PAGES THIS PROCESSED USED HERE
-                // TODO make sure Process_free() works as intended;
-                //Process_free(p);
-                p = NULL;
-                continue;
-            } else {
-                printf("%s\n", "Context switch!");
+            if (p->currInterval->right != NULL) {
+                printf("%s\n", "Jump to next interval...");
                 Process_jumpToNextInterval(p);
                 Process_switchStatus(RUNNING, WAITING);
+                continue;
+            } else {
+                printf("%s\n", "This process finished!.");
+                Process_switchStatus(RUNNING, FINISHED);
+                // Process_free(p);
                 continue;
             }
         }
