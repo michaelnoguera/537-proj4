@@ -84,9 +84,7 @@ PPage* Memory_getPPage(ul64 ppn) {
 /**
  * Accesses the virtual page with a given ppn
  */
-VPage* Memory_getVPage(ul64 ppn) {
-    return memory[ppn]->virtualPage;
-}
+VPage* Memory_getVPage(ul64 ppn) { return memory[ppn]->virtualPage; }
 
 /**
  * Frees the page at a given ppn by sending the virtual page to backing store
@@ -103,7 +101,7 @@ void Memory_evictPage(ul64 ppn) {
     // remove page from free list (mark as clear)
     freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn); // set high
     freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn); // flip to low
-    allocated--;        // tick allocated counter
+    allocated--;                                 // tick allocated counter
 }
 
 /**
@@ -128,7 +126,7 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
     // OR with an integer containing 1 at the offset given by PPN
     // has effect of setting to 1 at the offset position
     freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
-    allocated++;        // tick allocated counter
+    allocated++; // tick allocated counter
 }
 
 /**
@@ -136,9 +134,13 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
  */
 ul64 Memory_getFreePage() {
     for (ul64 fl_ind = 0; fl_ind < mem_size; fl_ind++) {
-        printf("\x1B[34m %d \n\x1B[0m", freelist[fl_ind]);
+        // printf("\x1B[34m %d \n\x1B[0m", freelist[fl_ind]);
         int fz_ind = bv_ffz(freelist[fl_ind]);
-        if (fz_ind >= 0) { printf("\x1B[35m %lu %d \n\x1B[0m", fl_ind * 32 + fz_ind, fz_ind); return fl_ind * 32 + fz_ind; }
+        if (fz_ind >= 0) {
+            // printf("\x1B[35m %lu %d \n\x1B[0m", fl_ind * 32 + fz_ind,
+            // fz_ind);
+            return fl_ind * 32 + fz_ind;
+        }
     }
     perror(
       "WARN: Tried to get free page when none are avaliable. Use "
@@ -149,8 +151,9 @@ ul64 Memory_getFreePage() {
 /**
  * @return true if there is a free page in memory
  */
-bool Memory_hasFreePage() { 
-    printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m", allocated, mem_size);
+bool Memory_hasFreePage() {
+    printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
+           allocated, mem_size);
     return mem_size != allocated;
 }
 

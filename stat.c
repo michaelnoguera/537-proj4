@@ -30,7 +30,7 @@ void Stat_default(unsigned long numTicks) {
     ProgStats->tmu += Memory_howManyAllocPages() * numTicks;
     // ONLY ONE PROCESS CAN BE IN THE 'RUNNING' QUEUE AT A TIME!
     ProgStats->trp += (ProcessQueue_numWaitingProcs() + 
-                    ((int)Process_existsWithStatus(RUNNING))) * numTicks;
+                    ((int)Process_existsWithStatus(RUNNABLE))) * numTicks;
 }
 
 // This tick, a hit happened

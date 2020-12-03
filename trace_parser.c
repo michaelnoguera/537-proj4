@@ -63,7 +63,7 @@ static void PidMap_free(void* PidMap) {
 /**
  * Runs a first pass over the specified trace file, passed using a FILE*
  * pointer. After running this function, all Process structs will be in the
- * NOTSTARTED ProcessQueue.
+ * RUNNABLE ProcessQueue.
  * @param trace_file file provided as input
  */
 void first_pass(FILE* trace_file) {

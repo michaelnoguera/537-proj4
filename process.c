@@ -8,10 +8,10 @@ static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
 static int numProcs_Waiting = 0;
 
 void ProcessQueues_init() {
-    STAILQ_INIT(&pq[RUNNING]); // should only ever have one element
-    STAILQ_INIT(&pq[WAITING]); // waiting for scheduler
+    STAILQ_INIT(&pq[RUNNABLE]); // should only ever have one element
+    STAILQ_INIT(&pq[RUNNABLE]); // waiting for scheduler
     STAILQ_INIT(&pq[BLOCKED]); // waiting on disk
-    STAILQ_INIT(&pq[NOTSTARTED]);
+    STAILQ_INIT(&pq[RUNNABLE]);
     STAILQ_INIT(&pq[FINISHED]);
 }
 
@@ -39,7 +39,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
 int ProcessQueue_numWaitingProcs() { return numProcs_Waiting; }
 
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
-    if (q == &pq[WAITING]) {
+    if (q == &pq[RUNNABLE]) {
         ProcessQueue_enqueuePriority(p, q);
         numProcs_Waiting++;
         STAILQ_INSERT_TAIL(q, p,
@@ -54,17 +54,17 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
 
     printf("Queue: ");
     switch (q_s) {
-        case RUNNING:
+        /*case RUNNING:
             printf("RUNNING\n");
-            break;
-        case WAITING:
+            break;*/
+        case RUNNABLE:
             printf("WAITING\n");
             break;
         case BLOCKED:
             printf("BLOCKED\n");
             break;
-        /*case NOTSTARTED:
-            printf("NOTSTARTED\n");
+        /*case RUNNABLE:
+            printf("RUNNABLE\n");
             break;*/
         case FINISHED:
             printf("FINISHED\n");
@@ -84,8 +84,9 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
     for (int i = 0; head != NULL; i++, head = STAILQ_NEXT(head, procs)) {
         printf(
           "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m (%p) pid: %ld start: "
-          "%ld end: %ld \x1B[0m, INTERVALS: ",
-          i, (void*)head, head->pid, head->firstline, head->lastline);
+          "%ld current: %ld end: %ld \x1B[0m, INTERVALS: ",
+          i, (void*)head, head->pid, head->firstline, head->currentline,
+          head->lastline);
         it_print(head->lineIntervals);
         printf("\n");
     }
@@ -199,8 +200,8 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
     p->currInterval = lineIntervals;
 
     p->pageTable = PageTable_init();
-    p->status = NOTSTARTED;
-    STAILQ_INSERT_TAIL(&pq[NOTSTARTED], p, procs);
+    p->status = RUNNABLE;
+    STAILQ_INSERT_TAIL(&pq[RUNNABLE], p, procs);
 
     return p;
 }

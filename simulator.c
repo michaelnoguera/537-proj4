@@ -23,10 +23,10 @@ static_assert(DISK_PENALTY % CLOCK_TICK == 0,
               "ever add up to a completed I/O.");
 
 static inline bool notDone() {
-    return Process_existsWithStatus(RUNNING)
-           || Process_existsWithStatus(WAITING)
+    return Process_existsWithStatus(RUNNABLE)
+           || Process_existsWithStatus(RUNNABLE)
            || Process_existsWithStatus(BLOCKED)
-           || Process_existsWithStatus(NOTSTARTED);
+           || Process_existsWithStatus(RUNNABLE);
 }
 
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
@@ -95,60 +95,34 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         if (Process_existsWithStatus(BLOCKED)) {
             Process_peek(BLOCKED)->waitTime -= CLOCK_TICK;
             if (Process_peek(BLOCKED)->waitTime == 0) {
-                if (!Process_existsWithStatus(RUNNING)) {
+                // resume process that is returning from disk i/o
+                Process* restarting = Process_peek(BLOCKED);
+                assert(restarting->waitingOnPage != NULL);
+                assert(restarting->status == BLOCKED);
 
-                    // simply resume - nothing to interrupt
-                    Process* restarting = Process_peek(BLOCKED);
-                    assert(restarting->waitingOnPage != NULL);
-                    assert(restarting->status == BLOCKED);
+                printf("Process %lu is done waiting!\n", restarting->pid);
 
-                    printf("Process %lu is done waiting!\n", restarting->pid);
+                // load context
+                Simulator_loadPendingPage(restarting);
+                Simulator_loadSavedProcessState(tracefile, restarting);
 
-                    // load context
-                    Simulator_loadPendingPage(restarting);
-                    Simulator_loadSavedProcessState(tracefile, restarting);
-
-                    // resume blocked process
-                    if (Process_hasLinesRemainingInFile(p)) {
-                        Process_switchStatus(BLOCKED, RUNNING);
-                    } else {
-                        Process_switchStatus(BLOCKED, FINISHED);
-                        continue;
-                    }
-                } else if (Process_existsWithStatus(BLOCKED)
-                           && (Process_peek(BLOCKED)->waitTime) == 0) {
-                    // resume, interrupting current process
-                    Process* interrupted = Process_peek(RUNNING);
-                    Process* restarting = Process_peek(BLOCKED);
-                    assert(interrupted != NULL && restarting != NULL);
-                    assert(restarting->waitingOnPage != NULL);
-                    assert(restarting->status == BLOCKED);
-
-                    printf("Process %lu is done waiting!\n", restarting->pid);
-
-                    // switch context
-                    Simulator_saveProcessState(tracefile, interrupted);
-                    Simulator_loadPendingPage(
-                      restarting); // evicts if neccesary
-                    Simulator_loadSavedProcessState(tracefile, restarting);
-
-                    // resume blocked process
-                    Process_switchStatus(RUNNING, WAITING);
-                    Process_switchStatus(BLOCKED, WAITING);
+                // resume blocked process
+                if (Process_hasLinesRemainingInFile(p)) {
+                    Process_switchStatus(BLOCKED, RUNNABLE);
                 }
             }
         }
 
         // 2. Determine process to run
-        if (!Process_existsWithStatus(RUNNING)) {
-            if (Process_existsWithStatus(WAITING)) { // 1. resume interrupted?
+        if (!Process_existsWithStatus(RUNNABLE)) {
+            if (Process_existsWithStatus(RUNNABLE)) { // 1. resume interrupted?
                 Simulator_loadSavedProcessState(tracefile,
-                                                Process_peek(WAITING));
-                Process_switchStatus(WAITING, RUNNING);
-            } else if (Process_existsWithStatus(NOTSTARTED)) { // 2. new proc.
+                                                Process_peek(RUNNABLE));
+                Process_switchStatus(RUNNABLE, RUNNABLE);
+            } else if (Process_existsWithStatus(RUNNABLE)) { // 2. new proc.
                 Simulator_loadSavedProcessState(tracefile,
-                                                Process_peek(NOTSTARTED));
-                Process_switchStatus(NOTSTARTED, RUNNING);
+                                                Process_peek(RUNNABLE));
+                Process_switchStatus(RUNNABLE, RUNNABLE);
             } else if (Process_existsWithStatus(BLOCKED)) {
                 continue; // nothing runnable, wait for disk/io to finish
             } else {
@@ -159,19 +133,22 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             }
         }
 
-        assert(Process_existsWithStatus(RUNNING));
-        if (Process_peek(RUNNING)->waitTime != 0) {
+        assert(Process_existsWithStatus(RUNNABLE));
+        if (Process_peek(RUNNABLE)->waitTime != 0) {
+            perror("BLOCKED PROC ESCAPED BLOCK QUEUE!");
             for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
                 ProcessQueue_printQueue(i);
             }
-            assert(false);
+            assert(Process_peek(RUNNABLE)->waitTime == 0);
         }
 
-        if (p != Process_peek(RUNNING)) {
+        if (p != Process_peek(RUNNABLE)) {
             unsigned long oldpid = p->pid;
-            p = Process_peek(RUNNING);
+            p = Process_peek(RUNNABLE);
             printf("Running process has changed (%lu->%lu)\n", oldpid, p->pid);
         }
+
+        Simulator_loadSavedProcessState(tracefile, p);
 
         // 3. Find line to run next
         unsigned long pid;
@@ -181,15 +158,21 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         // case 1: next line immediately follows the current one
         if (Process_hasLinesRemainingInInterval(p)) {
             fscanf(tracefile, "%lu %lu\n", &pid, &vpn);
+
             printf("%lu %lu\n", pid, vpn);
-            if (pid != p->pid) { printf("oops\n"); }
-            assert(pid == p->pid);
+            if (pid != p->pid) {
+                for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
+                    ProcessQueue_printQueue(i);
+                }
+                assert(pid == p->pid);
+            }
+
             p->currentline++;
         } else {
             if (!Process_hasLinesRemainingInFile(p)) {
                 printf("%s\n", "This process finished!.");
                 Simulator_saveProcessState(tracefile, p);
-                Process_switchStatus(RUNNING, FINISHED);
+                Process_switchStatus(RUNNABLE, FINISHED);
                 // Process_free(p);
                 continue;
             }
@@ -200,13 +183,13 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
                 printf("%s\n", "WARN: THIS LINE WAS IN THE INTERVAL");
                 assert(false);
                 Simulator_saveProcessState(tracefile, p);
-                Process_switchStatus(RUNNING, WAITING);
+                Process_switchStatus(RUNNABLE, RUNNABLE);
                 continue;
             } else if (Process_hasIntervalsRemaining(p)) {
                 printf("%s\n", "Jump to next interval...");
                 Process_jumpToNextInterval(p);
                 Simulator_saveProcessState(tracefile, p);
-                Process_switchStatus(RUNNING, WAITING);
+                Process_switchStatus(RUNNABLE, RUNNABLE);
                 continue;
             }
             perror("Invalid state.");
@@ -226,26 +209,18 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         }
 
         if (Process_virtualPageInMemory(p, vpn)) {
-            printf("\t%s\n", "physical memory hit");
-            Replace_notifyPageAccess(v->currentPPN);
+            printf("\t%s\n", "hit");
+            // Replace_notifyPageAccess(v->currentPPN);
             Stat_hit();
         } else {
-            printf("\t%s\n", "physical memory miss --> block & switch!");
-            p->currentPos =
-              ftell(tracefile); // save location for context switch
-            Process_switchStatus(RUNNING, BLOCKED);
+            printf("\t%s\n", "miss --> block & switch!");
+            Process_switchStatus(RUNNABLE, BLOCKED);
             p->waitTime = DISK_PENALTY;
-            if (p->pid == 30) { printf("%s", "um ok"); }
             p->waitingOnPage = v;
             Stat_miss();
-            continue;
         }
+        Simulator_saveProcessState(tracefile, p);
 
-        //
-
-
-        // lookup VPN in page table and either fault or perform successful
-        // reference
     }
 
     printf("%s\n", "===DONE WITH SIMULATION===");

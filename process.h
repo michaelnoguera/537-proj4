@@ -6,12 +6,10 @@
 #    define _PROCESS_
 
 typedef enum ProcessStatus {
-    RUNNING = 0,
-    WAITING = 1,
-    BLOCKED = 2,
-    NOTSTARTED = 1,
-    FINISHED = 3,
-    NUM_OF_PROCESS_STATUSES = 4,
+    RUNNABLE = 0,
+    BLOCKED = 1,
+    FINISHED = 2,
+    NUM_OF_PROCESS_STATUSES = 3,
 } ProcessStatus;
 
 typedef void* PageTable;
