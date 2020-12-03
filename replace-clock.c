@@ -1,5 +1,6 @@
 #include "replace.h"
 #include <assert.h>
+#include <stdlib.h>
 
 struct clock_overhead {
     unsigned int ref : 1; // refrence bit

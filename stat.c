@@ -8,6 +8,8 @@
 #include "stat.h"
 #include "memory.h"
 #include "process.h"
+
+#include <stdlib.h>
 #include <stdio.h>
 
 static struct stat_t* ProgStats;

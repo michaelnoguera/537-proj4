@@ -2,6 +2,7 @@
 #include "memory.h"
 #include <assert.h>
 #include <search.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
@@ -243,9 +244,6 @@ inline bool Process_hasLinesRemainingInFile(const Process* p) {
  * trace lines within the current interval have completed
  */
 inline bool Process_hasLinesRemainingInInterval(const Process* p) {
-<<<<<<< HEAD
-    return ((int)p->currentline < p->currInterval->high);
-=======
     assert(!(p->currentline > p->currInterval->high));
     printf("%s\n", "process line within range");
     return (p->currentline <= p->currInterval->high);
@@ -263,7 +261,6 @@ inline size_t Process_linesRemainingInInterval(const Process* p) {
  */
 inline bool Process_onLastLineInInterval(const Process* p) {
     return p->currInterval->high == p->currentline;
->>>>>>> b1f5b57... Not working, but lots of progress? Switched intervaltree to use size_t s.
 }
 
 /**

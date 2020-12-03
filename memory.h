@@ -1,7 +1,6 @@
 // Simulates memory.
 
 #include "intervaltree.h"
-#include "linkedlist.h"
 #include <stdbool.h>
 #include <sys/queue.h>
 

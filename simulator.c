@@ -143,8 +143,11 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
         printf("%lu %lu\n", pid, vpn);
         if (pid != p->pid) {
+            if (p->status != RUNNABLE) {
+                fprintf(stderr, "Process escaped block queue.\n");
+            }
             if (p->currInterval->low < p->currentline && p->currInterval->high > p->currentline) {
-                fprintf(stderr, "Interval tree provided invalid location.");
+                fprintf(stderr, "Interval tree provided invalid location.\n");
             }
             for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
                 ProcessQueue_printQueue(i);

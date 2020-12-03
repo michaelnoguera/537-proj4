@@ -2,7 +2,7 @@
 
 CFLAGS=-Wall -Wextra -pedantic -std=gnu11
 SCAN_BUILD_DIR=scan-build-out
-COMMON_MODULES=main.o simulator.o trace_parser.o linkedlist.o intervaltree.o process.o memory.o stat.o
+COMMON_MODULES=main.o simulator.o trace_parser.o intervaltree.o process.o memory.o stat.o
 
 .PHONY:clean test all scan-build scan-view
 
@@ -43,14 +43,7 @@ else
 	gcc -c -o $@ $< $(CFLAGS)
 endif
 
-trace_parser.o: trace_parser.c trace_parser.h linkedlist.h intervaltree.h process.h
-ifeq ($(DEBUG),true)
-	gcc -g -c -o $@ $< $(CFLAGS)
-else
-	gcc -c -o $@ $< $(CFLAGS)
-endif
-
-linkedlist.o: linkedlist.c linkedlist.h
+trace_parser.o: trace_parser.c trace_parser.h intervaltree.h process.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else

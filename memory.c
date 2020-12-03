@@ -2,6 +2,7 @@
 #include "replace.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/queue.h>
 
 // a representation of physical memory
