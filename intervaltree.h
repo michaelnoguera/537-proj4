@@ -13,22 +13,22 @@
 #define _INTTREE_
 
 typedef struct interval_node_t {
-    int low; // low of current interval
-    int high; // high of current interval
-        int max; // max value present throughout entire subtree given by node
+    size_t low; // low of current interval
+    size_t high; // high of current interval
+    size_t max; // max value present throughout entire subtree given by node
     long fpos_start;
 
     struct interval_node_t* left; // pointer to left interval node
     struct interval_node_t* right; // pointer to right interval node
 } IntervalNode;
 
-bool it_contains(int low, int high, int x);
+bool it_contains(size_t low, size_t high, size_t x);
 
 /**
  * Constructs a new interval node
  * @return a pointer to the IntervalNode
  */
-IntervalNode* it_initnode(int low, int high);
+IntervalNode* it_initnode(size_t low, size_t high);
 
 /**
  * Inserts an interval node into the tree.
@@ -48,7 +48,7 @@ void it_insert(IntervalNode* root, IntervalNode* new_node);
  * 
  * @return true if found, false if not. 
  */
-bool it_find_bool(IntervalNode* root, int x);
+bool it_find_bool(IntervalNode* root, size_t x);
 
 /**
  * Finds an integer X within the entire tree.
@@ -58,7 +58,7 @@ bool it_find_bool(IntervalNode* root, int x);
  * 
  * @return pointer to found node, NULL if not found. 
  */
-IntervalNode* it_find(IntervalNode* root, int x);
+IntervalNode* it_find(IntervalNode* root, size_t x);
 
 /**
  * Walks a specified tree and prints all of its intervals.
@@ -73,7 +73,7 @@ void it_print(IntervalNode* root);
  * A "smart increment" function. Returns the value that proceeds the integer passed as an argument,
  * assuming it is not greater than or equal to the whole tree, in which case the result is just 0.
  */
-int it_giveNext(IntervalNode* root, int current);
+size_t it_giveNext(IntervalNode* root, size_t current);
 
 void it_setFpos(IntervalNode* n, long p);
 long it_getFpos(IntervalNode* n);

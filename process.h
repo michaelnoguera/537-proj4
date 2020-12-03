@@ -23,9 +23,9 @@ typedef struct process_t {
     ProcessStatus status;
 
     // Process's location in the file
-    unsigned long firstline;
-    unsigned long currentline;
-    unsigned long lastline;
+    size_t firstline;
+    size_t currentline;
+    size_t lastline;
     long currentPos;
     IntervalNode* currInterval;
     IntervalNode* lineIntervals;
@@ -62,6 +62,8 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
 
 bool Process_hasLinesRemainingInFile(const Process* p);
 bool Process_hasLinesRemainingInInterval(const Process* p);
+size_t Process_linesRemainingInInterval(const Process* p);
+bool Process_onLastLineInInterval(const Process* p);
 bool Process_hasIntervalsRemaining(const Process* p);
 void Process_jumpToNextInterval(Process* p);
 

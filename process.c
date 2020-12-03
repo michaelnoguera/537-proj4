@@ -232,7 +232,7 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
  * trace lines have completed
  */
 inline bool Process_hasLinesRemainingInFile(const Process* p) {
-    return (p->currentline != p->lastline);
+    return (p->currentline < p->lastline);
 }
 
 /**
@@ -243,7 +243,27 @@ inline bool Process_hasLinesRemainingInFile(const Process* p) {
  * trace lines within the current interval have completed
  */
 inline bool Process_hasLinesRemainingInInterval(const Process* p) {
+<<<<<<< HEAD
     return ((int)p->currentline < p->currInterval->high);
+=======
+    assert(!(p->currentline > p->currInterval->high));
+    printf("%s\n", "process line within range");
+    return (p->currentline <= p->currInterval->high);
+}
+
+/**
+ * @return number of lines remaining in current interval
+ */
+inline size_t Process_linesRemainingInInterval(const Process* p) {
+    return p->currInterval->high - p->currentline;
+}
+
+/**
+ * @return true if currentline is the last line in this interval
+ */
+inline bool Process_onLastLineInInterval(const Process* p) {
+    return p->currInterval->high == p->currentline;
+>>>>>>> b1f5b57... Not working, but lots of progress? Switched intervaltree to use size_t s.
 }
 
 /**
@@ -260,7 +280,7 @@ inline bool Process_hasIntervalsRemaining(const Process* p) {
  */
 inline void Process_jumpToNextInterval(Process* p) {
     assert(Process_hasIntervalsRemaining(p));
-    assert(!Process_hasLinesRemainingInInterval(p));
+    assert(Process_onLastLineInInterval(p));
     if (p != NULL && p->currInterval != NULL) {
         p->currInterval = p->currInterval->right;
         p->currentline = p->currInterval->low;

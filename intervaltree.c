@@ -12,7 +12,7 @@
 #include "intervaltree.h"
 
 // Node constructor
-IntervalNode* it_initnode(int low, int high) {
+IntervalNode* it_initnode(size_t low, size_t high) {
     IntervalNode* in;
     if ((in = (IntervalNode*)malloc(sizeof(IntervalNode))) == NULL) {
         perror("Error allocating memory for new node.");
@@ -27,7 +27,7 @@ IntervalNode* it_initnode(int low, int high) {
     return in;
 }
 
-bool it_contains(int low, int high, int x) {
+bool it_contains(size_t low, size_t high, size_t x) {
     return low <= x && x <= high;
 }
 
@@ -63,7 +63,7 @@ void it_insert(IntervalNode* root, IntervalNode* new_node) {
 }
 
 // Finds integer in whole subtree
-bool it_find_bool(IntervalNode* root, int x) {
+bool it_find_bool(IntervalNode* root, size_t x) {
 
     // Make sure the root is not null, and that x isn't greater than the maximum.
     if ((root == NULL) || (x > root->max)) {
@@ -80,7 +80,7 @@ bool it_find_bool(IntervalNode* root, int x) {
     }
 }
 
-IntervalNode* it_find(IntervalNode* root, int x) {
+IntervalNode* it_find(IntervalNode* root, size_t x) {
 
     // Make sure the root is not null, and that x isn't greater than the maximum.
     if ((root == NULL) || (x > root->max)) {
@@ -101,7 +101,7 @@ IntervalNode* it_find(IntervalNode* root, int x) {
 void it_print(IntervalNode* root) {
 
     if (root != NULL) {
-        printf("low: %d, high: %d; ", root->low, root->high);
+        printf("low: %lu, high: %lu; ", root->low, root->high);
 
         if (root->left != NULL) it_print(root->left);
         if (root->right != NULL) it_print(root->right);
@@ -111,7 +111,7 @@ void it_print(IntervalNode* root) {
 // todo: modify to check for VPN equal condition
 // not particularly useful at the moment since it only tells you when a process has its next line,
 // not when a page does. checking for the VPN would require being passed a FILE* though, should probably wrap around this
-int it_giveNext(IntervalNode* root, int current) {
+size_t it_giveNext(IntervalNode* root, size_t current) {
     // Make sure the root is not null, and that x isn't greater than the maximum.
     // If it is, the next value in the tree is 0, i.e., current is greater than or equal to anything in the tree.
     if ((root == NULL) || (current >= root->max)) {
