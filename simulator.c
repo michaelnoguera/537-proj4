@@ -24,9 +24,7 @@ static_assert(DISK_PENALTY % CLOCK_TICK == 0,
 
 static inline bool Simulator_notDone() {
     return Process_existsWithStatus(RUNNABLE)
-           || Process_existsWithStatus(RUNNABLE)
-           || Process_existsWithStatus(BLOCKED)
-           || Process_existsWithStatus(RUNNABLE);
+           || Process_existsWithStatus(BLOCKED);
 }
 
 static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
@@ -36,10 +34,10 @@ static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
 
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
     assert(p != NULL && p->status != FINISHED);
-    assert(p->currentPos != ftell(tracefile) && "Already at next line.");
+    //assert(p->currentPos != ftell(tracefile) && "Already at next line.");
     printf("--> now running pid=%lu at position=%lu\n", p->pid, p->currentPos);
     if (fseek(tracefile, p->currentPos, SEEK_SET) != p->currentPos) {
-        fprintf(stderr, "fseek to position %lu failed", p->currentPos);
+        perror("fseek to position %lu failed");
         exit(EXIT_FAILURE);
     }
 }
@@ -103,7 +101,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
     // unsigned long currentline = 1;
     assert(tracefile != NULL && "tracefile can't be null");
-    fseek(tracefile, 0, SEEK_SET); // reset ptr
+    rewind(tracefile); // reset ptr
     Process* p = Process_peek(RUNNABLE);
 
     while (Simulator_notDone()) {
@@ -130,6 +128,9 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         if (p != Process_peek(RUNNABLE)) {
             unsigned long oldpid = p->pid;
             p = Process_peek(RUNNABLE);
+            if (p->firstline == p->currentline) {
+                Simulator_seekSavedLine(tracefile, p);
+            }
             printf("Running process has changed (%lu->%lu)\n", oldpid, p->pid);
         }
 
@@ -141,7 +142,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
         fscanf(tracefile, "%lu %lu\n", &pid, &vpn);
 
-        printf("%lu %lu\n", pid, vpn);
+        printf("%lu | %lu %lu\n", p->currentline, pid, vpn);
         if (pid != p->pid) {
             if (p->status != RUNNABLE) {
                 fprintf(stderr, "Process escaped block queue.\n");
@@ -152,7 +153,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
                 ProcessQueue_printQueue(i);
             }
-            assert(false);
+            assert(pid == p->pid);
         }
 
         if (Process_hasLinesRemainingInInterval(p)) {
@@ -184,6 +185,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
                     Simulator_safelySwitchStatus(tracefile, p, RUNNABLE);
                 } else {
                     Simulator_safelySwitchStatus(tracefile, p, FINISHED);
+                    //TODO remove pages from memory
                 }
             }
         } else {

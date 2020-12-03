@@ -101,7 +101,7 @@ IntervalNode* it_find(IntervalNode* root, size_t x) {
 void it_print(IntervalNode* root) {
 
     if (root != NULL) {
-        printf("low: %lu, high: %lu; ", root->low, root->high);
+        printf("low: %lu (%lu), high: %lu; ", root->low, root->fpos_start, root->high);
 
         if (root->left != NULL) it_print(root->left);
         if (root->right != NULL) it_print(root->right);

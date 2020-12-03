@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/pfsim-clock",
-            "args": ["4000.addrtrace"],
+            "args": ["tiny.addrtrace"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

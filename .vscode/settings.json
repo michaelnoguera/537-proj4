@@ -13,6 +13,8 @@
         "iosfwd": "c",
         "functional": "c",
         "tuple": "c",
-        "numeric": "c"
+        "numeric": "c",
+        "random": "cpp",
+        "*.cuh": "cpp"
     }
 }
