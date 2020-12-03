@@ -9,9 +9,7 @@ static int numProcs_Waiting = 0;
 
 void ProcessQueues_init() {
     STAILQ_INIT(&pq[RUNNABLE]); // should only ever have one element
-    STAILQ_INIT(&pq[RUNNABLE]); // waiting for scheduler
     STAILQ_INIT(&pq[BLOCKED]); // waiting on disk
-    STAILQ_INIT(&pq[RUNNABLE]);
     STAILQ_INIT(&pq[FINISHED]);
 }
 
@@ -54,18 +52,12 @@ void ProcessQueue_printQueue(ProcessStatus q_s) {
 
     printf("Queue: ");
     switch (q_s) {
-        /*case RUNNING:
-            printf("RUNNING\n");
-            break;*/
         case RUNNABLE:
-            printf("WAITING\n");
+            printf("RUNNABLE\n");
             break;
         case BLOCKED:
             printf("BLOCKED\n");
             break;
-        /*case RUNNABLE:
-            printf("RUNNABLE\n");
-            break;*/
         case FINISHED:
             printf("FINISHED\n");
             break;
@@ -251,7 +243,7 @@ inline bool Process_hasLinesRemainingInFile(const Process* p) {
  * trace lines within the current interval have completed
  */
 inline bool Process_hasLinesRemainingInInterval(const Process* p) {
-    return ((int)p->currentline <= p->currInterval->high);
+    return ((int)p->currentline < p->currInterval->high);
 }
 
 /**
