@@ -138,7 +138,7 @@ ul64 Memory_getFreePage() {
     for (ul64 fl_ind = 0; fl_ind < mem_size; fl_ind++) {
         printf("\x1B[34m %d \n\x1B[0m", freelist[fl_ind]);
         int fz_ind = bv_ffz(freelist[fl_ind]);
-        if (fz_ind >= 0) { printf("\x1B[35m %d %d \n\x1B[0m", fl_ind * 32 + fz_ind, fz_ind); return fl_ind * 32 + fz_ind; }
+        if (fz_ind >= 0) { printf("\x1B[35m %lu %d \n\x1B[0m", fl_ind * 32 + fz_ind, fz_ind); return fl_ind * 32 + fz_ind; }
     }
     perror(
       "WARN: Tried to get free page when none are avaliable. Use "
@@ -150,7 +150,7 @@ ul64 Memory_getFreePage() {
  * @return true if there is a free page in memory
  */
 bool Memory_hasFreePage() { 
-    printf("\x1B[35m allocated pages: %d \n total pages: %d \n\x1B[0m", allocated, mem_size);
+    printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m", allocated, mem_size);
     return mem_size != allocated;
 }
 
