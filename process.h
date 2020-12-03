@@ -59,10 +59,12 @@ Process* Process_peek(ProcessStatus status);
 
 bool Process_existsWithStatus(ProcessStatus status);
 
+void Process_setStatus(Process* p, ProcessStatus status);
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2);
 
-bool Process_hasLinesRemaining(const Process* p);
-bool Process_hasIntervalsRemaining(Process* p);
+bool Process_hasLinesRemainingInFile(const Process* p);
+bool Process_hasLinesRemainingInInterval(const Process* p);
+bool Process_hasIntervalsRemaining(const Process* p);
 void Process_jumpToNextInterval(Process* p);
 
 VPage* Process_allocVirtualPage(Process* p, unsigned long vpn);

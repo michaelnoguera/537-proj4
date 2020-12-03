@@ -36,9 +36,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
     } while ((head = STAILQ_NEXT(head, procs)) != NULL);
 }
 
-int ProcessQueue_numWaitingProcs() {
-    return numProcs_Waiting;
-}
+int ProcessQueue_numWaitingProcs() { return numProcs_Waiting; }
 
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[WAITING]) {
@@ -148,7 +146,7 @@ static int PageTable_add(PageTable* pt, VPage* new) {
 }
 
 /**
- * @return page if found, NULL if not 
+ * @return page if found, NULL if not
  */
 static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
     VPage* entry_to_remove;
@@ -166,7 +164,7 @@ static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
 
 
 /**
- * Peek at the status at the head of a given status queue. NULL if none present.
+ * Peek at the proc. at the head of a given status queue. NULL if none present.
  */
 Process* Process_peek(ProcessStatus status) {
     return STAILQ_FIRST(&pq[status]);
@@ -235,21 +233,32 @@ Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
 }
 
 /**
- * Checks to see if the specified process has more lines left to run.
+ * Checks to see if the specified process has more lines left to run in the file
  * @param p process
  * @return true if there are lines left for the process to run, false if all
  * trace lines have completed
  */
-inline bool Process_hasLinesRemaining(const Process* p) {
-    return (p->currentline == p->lastline);
+inline bool Process_hasLinesRemainingInFile(const Process* p) {
+    return (p->currentline != p->lastline);
 }
 
 /**
- * @return true if there is another interval of trace lines to run for this process
- * or false if the process is in/finished with its last one
+ * Checks to see if the specified process has more lines left to run in the
+ * current interval
+ * @param p process
+ * @return true if there are lines left for the process to run, false if all
+ * trace lines within the current interval have completed
  */
-inline bool Process_hasIntervalsRemaining(Process* p) {
-    return (p->currInterval->right != NULL);
+inline bool Process_hasLinesRemainingInInterval(const Process* p) {
+    return ((int)p->currentline <= p->currInterval->high);
+}
+
+/**
+ * @return true if there is another interval of trace lines to run for this
+ * process or false if the process is in/finished with its last one
+ */
+inline bool Process_hasIntervalsRemaining(const Process* p) {
+    return ((void*)p->currInterval->right != NULL);
 }
 
 /**
@@ -257,9 +266,16 @@ inline bool Process_hasIntervalsRemaining(Process* p) {
  * appear again.
  */
 inline void Process_jumpToNextInterval(Process* p) {
-    p->currInterval = p->currInterval->right;
-    p->currentline = p->currInterval->low;
-    p->currentPos = p->currInterval->fpos_start;
+    assert(Process_hasIntervalsRemaining(p));
+    assert(!Process_hasLinesRemainingInInterval(p));
+    if (p != NULL && p->currInterval != NULL) {
+        p->currInterval = p->currInterval->right;
+        p->currentline = p->currInterval->low;
+        p->currentPos = p->currInterval->fpos_start;
+    } else {
+        perror("Tried to jump to next interval when none existed");
+        if (p != NULL) fprintf(stderr, "pid=%lu\n", p->pid);
+    }
 }
 
 VPage* Process_allocVirtualPage(Process* p, unsigned long vpn) {
