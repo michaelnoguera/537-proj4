@@ -34,10 +34,12 @@ static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
 
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
     assert(p != NULL && p->status != FINISHED);
-    //assert(p->currentPos != ftell(tracefile) && "Already at next line.");
+    // assert(p->currentPos != ftell(tracefile) && "Already at next line.");
     printf("--> now running pid=%lu at position=%lu\n", p->pid, p->currentPos);
-    if (fseek(tracefile, p->currentPos, SEEK_SET) != p->currentPos) {
-        perror("fseek to position %lu failed");
+    if (fseek(tracefile, p->currentPos, SEEK_SET) != 0
+        || ftell(tracefile) != p->currentPos) {
+        fprintf(stderr, "fseek to position %lu failed, ended up at %lu\n",
+                p->currentPos, ftell(tracefile));
         exit(EXIT_FAILURE);
     }
 }
@@ -68,6 +70,10 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
     assert(p != NULL);
 
     ProcessStatus old = p->status;
+    ProcessQueue_printQueue(RUNNABLE);
+    ProcessQueue_printQueue(BLOCKED);
+    ProcessQueue_printQueue(FINISHED);
+
     assert(Process_peek(old) == p && "not at head of queue");
 
     if (old == RUNNABLE) {
@@ -108,6 +114,11 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
         Stat_default(CLOCK_TICK);
+        // printf("t=%lu\n", time);
+
+        if (time % DISK_PENALTY == 0) {
+            printf("%s\n", "Here's a nice breakpoint!");
+        }
 
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
@@ -140,28 +151,24 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         assert(p != NULL);
         assert(p->currInterval != NULL);
 
-        fscanf(tracefile, "%lu %lu\n", &pid, &vpn);
+        if (fscanf(tracefile, "%lu %lu\n", &pid, &vpn) != 2) {
+            perror("Error reading from trace file.");
+            exit(EXIT_FAILURE);
+        }
 
         printf("%lu | %lu %lu\n", p->currentline, pid, vpn);
         if (pid != p->pid) {
             if (p->status != RUNNABLE) {
                 fprintf(stderr, "Process escaped block queue.\n");
             }
-            if (p->currInterval->low < p->currentline && p->currInterval->high > p->currentline) {
+            if (p->currInterval->low < p->currentline
+                && p->currInterval->high > p->currentline) {
                 fprintf(stderr, "Interval tree provided invalid location.\n");
             }
             for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
-                ProcessQueue_printQueue(i);
+                // ProcessQueue_printQueue(i);
             }
             assert(pid == p->pid);
-        }
-
-        if (Process_hasLinesRemainingInInterval(p)) {
-            p->currentline++;
-        } else if (Process_hasIntervalsRemaining(p)) {
-            printf("%s\n", "Jump to next interval...");
-            Process_jumpToNextInterval(p);
-            // defer switch to after memory access, b/c blocked takes priority
         }
 
         // 4. Simulate memory reference
@@ -180,19 +187,27 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             printf("\t%s\n", "hit");
             // Replace_notifyPageAccess(v->currentPPN);
             Stat_hit();
-            if (!Process_hasLinesRemainingInInterval(p)) {
-                if (Process_hasIntervalsRemaining(p)) {
-                    Simulator_safelySwitchStatus(tracefile, p, RUNNABLE);
-                } else {
-                    Simulator_safelySwitchStatus(tracefile, p, FINISHED);
-                    //TODO remove pages from memory
-                }
+
+            if (Process_onLastLineInInterval(p)
+                && Process_hasIntervalsRemaining(p)) {
+                printf("%s\n", "Jump to next interval...");
+                Process_jumpToNextInterval(p);
+                Simulator_seekSavedLine(tracefile, p);
+                Process_switchStatus(RUNNABLE, RUNNABLE); // DANGER CALL
+                // defer switch to after memory access, b/c blocked takes
+                // priority
+            } else if (Process_hasLinesRemainingInInterval(p)) {
+                p->currentline++;
+            } else {
+                Simulator_safelySwitchStatus(tracefile, p, FINISHED);
+                // TODO remove pages from memory
             }
         } else {
             printf("\t%s\n", "miss");
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
             Stat_miss();
+            Simulator_seekSavedLine(tracefile, p);
             Simulator_safelySwitchStatus(tracefile, p, BLOCKED);
         }
     }

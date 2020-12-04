@@ -28,6 +28,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
 
     do {
         assert(head != NULL);
+        assert(head->pid != p->pid);
         if (p->currentline <= head->currentline) {
             STAILQ_INSERT_AFTER(q, p, head, procs);
             return;
