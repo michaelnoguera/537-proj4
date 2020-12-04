@@ -2,15 +2,14 @@
 #include "memory.h"
 #include <assert.h>
 #include <search.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
-static int numProcs_Waiting = 0;
 
 void ProcessQueues_init() {
     STAILQ_INIT(&pq[RUNNABLE]); // should only ever have one element
-    STAILQ_INIT(&pq[BLOCKED]); // waiting on disk
+    STAILQ_INIT(&pq[BLOCKED]);  // waiting on disk
     STAILQ_INIT(&pq[FINISHED]);
 }
 
@@ -23,27 +22,28 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
         STAILQ_INSERT_HEAD(q, p, procs);
         return;
     }
+    
+    Process* prev = NULL;
+    Process* curr = NULL;
 
-    Process* head = STAILQ_FIRST(q);
+    // iterate until past spot- but prev will still be the element before
+    STAILQ_FOREACH(curr, q, procs) {
+        assert(curr->pid != p->pid);
+        if (curr->currentPos > p->currentPos) break;
+        prev = curr;
+    }
 
-    do {
-        assert(head != NULL);
-        assert(head->pid != p->pid);
-        if (p->currentline <= head->currentline) {
-            STAILQ_INSERT_AFTER(q, p, head, procs);
-            return;
-        }
-    } while ((head = STAILQ_NEXT(head, procs)) != NULL);
+    if (prev == NULL) { // first element checked was greater
+        STAILQ_INSERT_HEAD(q, p, procs);
+    } else { // insert using ptr
+        STAILQ_INSERT_AFTER(q, prev, p, procs);
+    }
 }
 
-int ProcessQueue_numWaitingProcs() { return numProcs_Waiting; }
 
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[RUNNABLE]) {
         ProcessQueue_enqueuePriority(p, q);
-        numProcs_Waiting++;
-        STAILQ_INSERT_TAIL(q, p,
-                           procs); // TODO replace with sorted insert function
     } else {
         STAILQ_INSERT_TAIL(q, p, procs);
     }
@@ -245,8 +245,6 @@ inline bool Process_hasLinesRemainingInFile(const Process* p) {
  * trace lines within the current interval have completed
  */
 inline bool Process_hasLinesRemainingInInterval(const Process* p) {
-    assert(!(p->currentline > p->currInterval->high));
-    printf("%s\n", "process line within range");
     return (p->currentline <= p->currInterval->high);
 }
 

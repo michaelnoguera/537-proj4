@@ -35,7 +35,7 @@ static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
     assert(p != NULL && p->status != FINISHED);
     // assert(p->currentPos != ftell(tracefile) && "Already at next line.");
-    printf("--> now running pid=%lu at position=%lu\n", p->pid, p->currentPos);
+    // printf("--> now running pid=%lu at position=%lu\n", p->pid, p->currentPos);
     if (fseek(tracefile, p->currentPos, SEEK_SET) != 0
         || ftell(tracefile) != p->currentPos) {
         fprintf(stderr, "fseek to position %lu failed, ended up at %lu\n",
@@ -60,7 +60,7 @@ static inline void Simulator_finishCurrentDiskIO() {
         Memory_evictPage(ppn);
         Memory_loadPage(p->waitingOnPage, ppn);
     }
-    printf("Loaded vpn %lu into ppn %lu\n", p->waitingOnPage->vpn, ppn);
+    //printf("Loaded vpn %lu into ppn %lu\n", p->waitingOnPage->vpn, ppn);
     p->waitingOnPage = NULL;
 }
 
@@ -70,9 +70,9 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
     assert(p != NULL);
 
     ProcessStatus old = p->status;
-    ProcessQueue_printQueue(RUNNABLE);
-    ProcessQueue_printQueue(BLOCKED);
-    ProcessQueue_printQueue(FINISHED);
+    //ProcessQueue_printQueue(RUNNABLE);
+    //ProcessQueue_printQueue(BLOCKED);
+    //ProcessQueue_printQueue(FINISHED);
 
     assert(Process_peek(old) == p && "not at head of queue");
 
@@ -110,15 +110,18 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
     rewind(tracefile); // reset ptr
     Process* p = Process_peek(RUNNABLE);
 
+    printf("%s\n"," #  | pid vpn hit/miss");
+    printf("%s\n","---   --- --- --------");
+
     while (Simulator_notDone()) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
         Stat_default(CLOCK_TICK);
         // printf("t=%lu\n", time);
 
-        if (time % DISK_PENALTY == 0) {
-            printf("%s\n", "Here's a nice breakpoint!");
-        }
+        //if (time % DISK_PENALTY == 0) {
+        //    printf("%s\n", "Here's a nice breakpoint!");
+        //}
 
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
@@ -136,14 +139,11 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             continue; // TODO replace this with the jumpy thing
         }
 
-        if (p != Process_peek(RUNNABLE)) {
-            unsigned long oldpid = p->pid;
-            p = Process_peek(RUNNABLE);
-            if (p->firstline == p->currentline) {
-                Simulator_seekSavedLine(tracefile, p);
-            }
-            printf("Running process has changed (%lu->%lu)\n", oldpid, p->pid);
+        p = Process_peek(RUNNABLE);
+        if (p->currentPos != ftell(tracefile)) {
+            Simulator_seekSavedLine(tracefile, p);
         }
+        //printf("Running process %lu\n", p->pid);
 
         // 3. Find line to run next
         unsigned long pid;
@@ -156,7 +156,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             exit(EXIT_FAILURE);
         }
 
-        printf("%lu | %lu %lu\n", p->currentline, pid, vpn);
+        printf("%3lu | %3lu %3lu", p->currentline, pid, vpn);
         if (pid != p->pid) {
             if (p->status != RUNNABLE) {
                 fprintf(stderr, "Process escaped block queue.\n");
@@ -177,7 +177,6 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
         // Create new v. page if none exists
         if (v == NULL) {
-            printf("\t%s\n", "new page, allocating virtual page");
             v = Process_allocVirtualPage(p, vpn);
             assert(v != NULL);
             assert(Process_getVirtualPage(p, vpn) == v);
@@ -190,7 +189,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
             if (Process_onLastLineInInterval(p)
                 && Process_hasIntervalsRemaining(p)) {
-                printf("%s\n", "Jump to next interval...");
+                //printf("%s\n", "Jump to next interval...");
                 Process_jumpToNextInterval(p);
                 Simulator_seekSavedLine(tracefile, p);
                 Process_switchStatus(RUNNABLE, RUNNABLE); // DANGER CALL

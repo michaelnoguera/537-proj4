@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
     first_pass(tracefile);
 
     // ProcessQueue_printQueue(RUNNABLE);
-    for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
+    /*for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
         Process* head = Process_peek(i);
         for (int i = 0; head != NULL; i++, head = STAILQ_NEXT(head, procs)) {
             printf(
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
             it_print(head->lineIntervals);
             printf("\n");
         }
-    }
+    }*/
 
       // 3. RUN SIMULATION
       unsigned long exit_time = Simulator_runSimulation(tracefile);
