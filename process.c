@@ -44,6 +44,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[RUNNABLE]) {
         ProcessQueue_enqueuePriority(p, q);
+        
     } else {
         STAILQ_INSERT_TAIL(q, p, procs);
     }
@@ -245,7 +246,7 @@ inline bool Process_hasLinesRemainingInFile(const Process* p) {
  * trace lines within the current interval have completed
  */
 inline bool Process_hasLinesRemainingInInterval(const Process* p) {
-    return (p->currentline <= p->currInterval->high);
+    return (p->currentline < p->currInterval->high);
 }
 
 /**

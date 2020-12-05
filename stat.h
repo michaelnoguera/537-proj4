@@ -10,8 +10,8 @@
 // The tmu and trp fields get converted into the correct amu and arp fields at the
 // point of the program exit, where they are divided by the total time.
 struct stat_t {
-    float tmu; // total memory utilization (compounding)
-    float trp; // total runable processes (compounding)
+    unsigned long tmu; // total memory utilization (compounding)
+    unsigned long trp; // total runable processes (compounding)
     float tmr; // total memory references
     float tpi; // total page ins: number of page faults
 };

@@ -56,6 +56,7 @@ static inline void Simulator_finishCurrentDiskIO() {
         ppn = Memory_getFreePage();
         Memory_loadPage(p->waitingOnPage, ppn);
     } else {
+        printf("EVICTING A PAGE !!!!!!!\n");
         ppn = Replace_getPageToEvict();
         Memory_evictPage(ppn);
         Memory_loadPage(p->waitingOnPage, ppn);
@@ -65,7 +66,7 @@ static inline void Simulator_finishCurrentDiskIO() {
 }
 
 static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
-                                                ProcessStatus new) {
+                                                ProcessStatus new, long fpos_hack) {
     assert(tracefile != NULL && ferror(tracefile) == 0);
     assert(p != NULL);
 
@@ -77,7 +78,9 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
     assert(Process_peek(old) == p && "not at head of queue");
 
     if (old == RUNNABLE) {
-        Simulator_saveRunningProcessLine(tracefile);
+        assert(tracefile != NULL && Process_peek(RUNNABLE) != NULL);
+        Process_peek(RUNNABLE)->currentPos = fpos_hack;
+        
     } else if (old == BLOCKED) {
         assert(p->waitTime == 0
                && "Cannot resume blocked process prematurely.");
@@ -129,7 +132,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             if (Process_peek(BLOCKED)->waitTime == 0) {
                 Simulator_finishCurrentDiskIO(); // evicts if needed
                 Simulator_safelySwitchStatus(tracefile, Process_peek(BLOCKED),
-                                             RUNNABLE);
+                                             RUNNABLE, 0);
             }
         }
 
@@ -139,10 +142,15 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             continue; // TODO replace this with the jumpy thing
         }
 
+        Process* old_p = p;
         p = Process_peek(RUNNABLE);
-        if (p->currentPos != ftell(tracefile)) {
-            Simulator_seekSavedLine(tracefile, p);
+        if (old_p != p) {
+            if (p->currentPos != ftell(tracefile)) {
+                Simulator_seekSavedLine(tracefile, p);
+            }
         }
+        
+       
         //printf("Running process %lu\n", p->pid);
 
         // 3. Find line to run next
@@ -151,6 +159,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         assert(p != NULL);
         assert(p->currInterval != NULL);
 
+        long fpos_hack = ftell(tracefile);
         if (fscanf(tracefile, "%lu %lu\n", &pid, &vpn) != 2) {
             perror("Error reading from trace file.");
             exit(EXIT_FAILURE);
@@ -170,6 +179,8 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             }
             assert(pid == p->pid);
         }
+
+        //p->currentPos = ftell(tracefile);
 
         // 4. Simulate memory reference
         // get the virtual page-> look up in page table for this proc.
@@ -198,16 +209,16 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             } else if (Process_hasLinesRemainingInInterval(p)) {
                 p->currentline++;
             } else {
-                Simulator_safelySwitchStatus(tracefile, p, FINISHED);
+                Simulator_safelySwitchStatus(tracefile, p, FINISHED, 0);
                 // TODO remove pages from memory
             }
         } else {
             printf("\t%s\n", "miss");
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
-            Stat_miss();
-            Simulator_seekSavedLine(tracefile, p);
-            Simulator_safelySwitchStatus(tracefile, p, BLOCKED);
+            Stat_miss();    
+            // Simulator_saveRunningProcessLine(tracefile);
+            Simulator_safelySwitchStatus(tracefile, p, BLOCKED,fpos_hack);
         }
     }
 

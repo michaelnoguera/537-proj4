@@ -46,13 +46,14 @@ void Stat_miss() {
 
 // Print the stats out directly, given an end time for the program.
 void Stat_printStats(unsigned long time) {
-    double amu = ProgStats->tmu / (float)time;
-    double arp = ProgStats->trp / (float)time;
-    printf("(tmu=%f)", ProgStats->tmu);
+    float amu = ProgStats->tmu / time;
+    float arp = ProgStats->trp / (float)time;
+    printf("(tmu=%ul)", ProgStats->tmu);
 
     printf("%s\n","Program stats:");
     printf("AMU: %f (%f%% of total memory)\n", amu, (amu/Memory_getTotalSize()) * 100);
     printf("ARP: %f\n", arp);
     printf("TMR: %f\n", ProgStats->tmr);
     printf("TPI: %f\n", ProgStats->tpi);
+    printf("RTime: %lu\n", time);
 }
