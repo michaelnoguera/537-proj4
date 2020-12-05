@@ -28,9 +28,12 @@ void Replace_freeOverhead(void* o_ptr) {
     free((struct clock_overhead*)o_ptr);
 }
 
-void Replace_updateOverhead(void* o_ptr) {
+void Replace_notifyPageAccess(void* o_ptr) {
     ((struct clock_overhead*)o_ptr)->ref = 1;
 }
+
+// unimplemented
+void Replace_notifyPageMiss(__attribute__((unused))void* o_ptr) { return; }
 
 unsigned long Replace_getPageToEvict() {
     assert(!Memory_hasFreePage());

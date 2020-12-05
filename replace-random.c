@@ -9,9 +9,8 @@ void Replace_initReplacementModule(int numberOfPhysicalPages) {
 
 void* Replace_initOverhead(__attribute__((unused))VPage* vpage) { return NULL; }
 void Replace_freeOverhead(__attribute__((unused)) void* o_ptr) { return; }
-void Replace_notifyPageAccess(__attribute__((unused)) int ppn) {}
-void Replace_updateOverhead(__attribute__((unused)) void* o_ptr) { return; }
-
+void Replace_notifyPageAccess(__attribute__((unused)) void* o_ptr) { return; }
+void Replace_notifyPageMiss(__attribute__((unused)) void* o_ptr) { return; }
 /**
  * Randomly chooses a page to evict.
  * @details Yes, this violates "MSC30-C Do not use the rand() function for

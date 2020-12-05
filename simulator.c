@@ -195,6 +195,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
         if (Process_virtualPageInMemory(p, vpn)) {
             printf("\t%s\n", "hit");
+            Replace_notifyPageAccess(v->overhead);
             // Replace_notifyPageAccess(v->currentPPN);
             Stat_hit();
 
@@ -209,7 +210,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             } else if (Process_hasLinesRemainingInInterval(p)) {
                 p->currentline++;
             } else {
-                printf("Process %d finished!\n", p->pid);
+                printf("Process %ld finished!\n", p->pid);
                 Simulator_safelySwitchStatus(tracefile, p, FINISHED, 0);
                 Process_quit(p);
                 // TODO remove pages from memory
@@ -218,6 +219,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             printf("\t%s\n", "miss");
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
+            Replace_notifyPageAccess(v->overhead);
             Stat_miss();    
             // Simulator_saveRunningProcessLine(tracefile);
             Simulator_safelySwitchStatus(tracefile, p, BLOCKED,fpos_hack);

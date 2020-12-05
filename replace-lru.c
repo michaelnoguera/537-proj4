@@ -50,17 +50,20 @@ void Replace_freeOverhead(void* o_ptr) {
     free(overhead);
 }
 
-void Replace_updateOverhead(void* o_ptr) {
+void Replace_notifyPageAccess(void* o_ptr) {
     struct lrunit* overhead = (struct lrunit*)o_ptr;
     TAILQ_REMOVE(&lrq, overhead, entries);
     TAILQ_INSERT_HEAD(&lrq, overhead, entries);
 }
 
-void Replace_notifyPageAccess(int ppn) {
+// unimplemented
+void Replace_notifyPageMiss(__attribute__((unused))void* o_ptr) { return; }
+
+/*void Replace_notifyPageAccess(int ppn) {
     struct lrunit* overhead = (struct lrunit*)Memory_getVPage(ppn)->overhead;
     TAILQ_REMOVE(&lrq, overhead, entries);
     TAILQ_INSERT_HEAD(&lrq, overhead, entries);
-}
+}*/
 
 unsigned long Replace_getPageToEvict() {
     #pragma message "replace-lru has no eviction policy yet"
