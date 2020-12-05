@@ -97,6 +97,7 @@ void Memory_evictPage(ul64 ppn) {
         exit(EXIT_FAILURE);
     }
     assert(memory[ppn] != NULL && "Physical page should always exist.");
+    memory[ppn]->virtualPage->inMemory = false;
     memory[ppn]->virtualPage = NULL;
 
     // remove page from free list (mark as clear)
