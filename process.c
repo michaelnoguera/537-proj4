@@ -233,7 +233,10 @@ void Process_setStatus(Process* p, ProcessStatus status) {
  */
 Process* Process_switchStatus(ProcessStatus s1, ProcessStatus s2) {
     Process* p = STAILQ_FIRST(&pq[s1]);
-    if (p == NULL) return NULL;
+    if (p == NULL) {
+        perror("WARN: Impossible switch, no process on source queue.");
+        return NULL;
+    }
     STAILQ_REMOVE_HEAD(&pq[s1], procs);
     p->status = s2;
     ProcessQueue_enqueue(p, &pq[s2]);
@@ -325,7 +328,7 @@ void VPage_freeInMem(const void *nodep, const VISIT which,
         break;
     case postorder:
         vp = *(VPage **) nodep;
-        printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
+        //printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
         if (vp->inMemory) {
             Memory_evictPage(vp->currentPPN);
         }
@@ -335,7 +338,7 @@ void VPage_freeInMem(const void *nodep, const VISIT which,
         break;
     case leaf:
         vp = *(VPage **) nodep;
-        printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
+        //printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
         if (vp->inMemory) {
             Memory_evictPage(vp->currentPPN);
         }
