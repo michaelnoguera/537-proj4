@@ -26,7 +26,7 @@ static inline unsigned int bv_ofs(ul64 n) { return n % 32; }
 // finds the index of the first 0 (unallocated) in a freelist chunk
 // MSB indexed starting at 0, -1 if there are no 0s
 static inline int bv_ffz(unsigned int n) {
-    return (~n == 0) ? -1 : (31 - __builtin_clz(~n));
+    return (~n == 0) ? -1 : __builtin_clz(~n);
 }
 
 /**
@@ -101,9 +101,13 @@ void Memory_evictPage(ul64 ppn) {
     memory[ppn]->virtualPage = NULL;
 
     // remove page from free list (mark as clear)
-    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn); // set high
-    freelist[bv_ind(ppn)] ^= 0x1 << bv_ofs(ppn); // flip to low
-    allocated--;                                 // tick allocated counter
+    if ((freelist[bv_ind(ppn)] << bv_ofs(ppn) & 2147483648) == 2147483648) {
+        freelist[bv_ind(ppn)] ^= 2147483648 >> bv_ofs(ppn); // flip to low        
+        allocated--;                                 // tick allocated counter
+    }
+    //freelist[bv_ind(ppn)] |= 2147483648 >> bv_ofs(ppn); // set high
+
+    
 }
 
 /**
@@ -127,7 +131,7 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
     // add page to free list (mark as taken)
     // OR with an integer containing 1 at the offset given by PPN
     // has effect of setting to 1 at the offset position
-    freelist[bv_ind(ppn)] |= 0x1 << bv_ofs(ppn);
+    freelist[bv_ind(ppn)] |= 2147483648 >> bv_ofs(ppn);
     allocated++; // tick allocated counter
 }
 
