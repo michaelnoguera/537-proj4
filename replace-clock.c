@@ -17,7 +17,7 @@ void Replace_initReplacementModule(int numberOfPhysicalPages) {
 
 void Replace_freeReplacementModule() { return; }
 
-void* Replace_initOverhead() {
+void* Replace_initOverhead(__attribute__((unused))VPage* vpage) {
     struct clock_overhead* co = 
             (struct clock_overhead*) malloc(sizeof(struct clock_overhead));
     co->ref = 0;

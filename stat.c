@@ -48,7 +48,7 @@ void Stat_miss() {
 void Stat_printStats(unsigned long time) {
     float amu = ProgStats->tmu / time;
     float arp = ProgStats->trp / (float)time;
-    printf("(tmu=%ul)", ProgStats->tmu);
+    printf("(tmu=%lu)", ProgStats->tmu);
 
     printf("%s\n","Program stats:");
     printf("AMU: %f (%f%% of total memory)\n", amu, (amu/Memory_getTotalSize()) * 100);

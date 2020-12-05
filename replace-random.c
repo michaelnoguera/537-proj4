@@ -7,7 +7,7 @@ void Replace_initReplacementModule(int numberOfPhysicalPages) {
     numPages = numberOfPhysicalPages;
 }
 
-void* Replace_initOverhead() { return NULL; }
+void* Replace_initOverhead(__attribute__((unused))VPage* vpage) { return NULL; }
 void Replace_freeOverhead(__attribute__((unused)) void* o_ptr) { return; }
 void Replace_notifyPageAccess(__attribute__((unused)) int ppn) {}
 void Replace_updateOverhead(__attribute__((unused)) void* o_ptr) { return; }
