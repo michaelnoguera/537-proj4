@@ -6,7 +6,7 @@ COMMON_MODULES=main.o simulator.o trace_parser.o intervaltree.o process.o memory
 
 .PHONY:clean test all scan-build scan-view
 
-all: pfsim-random pfsim-clock
+all: pfsim-random pfsim-clock pfsim-lru
 
 # build executable
 pfsim-clock: $(COMMON_MODULES) replace-clock.o
@@ -14,6 +14,9 @@ pfsim-clock: $(COMMON_MODULES) replace-clock.o
 
 pfsim-random: $(COMMON_MODULES) replace-random.o
 	gcc -o pfsim-random $(COMMON_MODULES) replace-random.o
+
+pfsim-lru: $(COMMON_MODULES) replace-lru.o
+	gcc -o pfsim-lru $(COMMON_MODULES) replace-lru.o
 
 replace-clock.o: replace-clock.c replace.h memory.h process.h
 ifeq ($(DEBUG),true)
@@ -23,6 +26,13 @@ else
 endif
 
 replace-random.o: replace-random.c replace.h memory.h process.h
+ifeq ($(DEBUG),true)
+	gcc -g -c -o $@ $< $(CFLAGS)
+else
+	gcc -c -o $@ $< $(CFLAGS)
+endif
+
+replace-lru.o: replace-lru.c replace.h memory.h process.h
 ifeq ($(DEBUG),true)
 	gcc -g -c -o $@ $< $(CFLAGS)
 else

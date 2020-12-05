@@ -184,7 +184,7 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
 
     v->pid = pid;
     v->vpn = vpn;
-    v->overhead = Replace_initOverhead();
+    v->overhead = Replace_initOverhead(v);
 
     v->inMemory = false;
 
