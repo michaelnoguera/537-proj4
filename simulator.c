@@ -209,7 +209,9 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             } else if (Process_hasLinesRemainingInInterval(p)) {
                 p->currentline++;
             } else {
+                printf("Process %d finished!\n", p->pid);
                 Simulator_safelySwitchStatus(tracefile, p, FINISHED, 0);
+                Process_quit(p);
                 // TODO remove pages from memory
             }
         } else {

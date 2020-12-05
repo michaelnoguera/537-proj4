@@ -26,7 +26,7 @@ static inline unsigned int bv_ofs(ul64 n) { return n % 32; }
 // finds the index of the first 0 (unallocated) in a freelist chunk
 // MSB indexed starting at 0, -1 if there are no 0s
 static inline int bv_ffz(unsigned int n) {
-    return (~n == 0) ? -1 : ((n == 0) ? 0 : 32 - __builtin_clz(n));
+    return (~n == 0) ? -1 : (31 - __builtin_clz(~n));
 }
 
 /**
@@ -134,7 +134,7 @@ void Memory_loadPage(VPage* virtualPage, ul64 ppn) {
  * @return the ppn of the next free page, or an out of bounds index if none
  */
 ul64 Memory_getFreePage() {
-    for (ul64 fl_ind = 0; fl_ind < mem_size; fl_ind++) {
+    for (ul64 fl_ind = 0; fl_ind < mem_size / 32; fl_ind++) {
         // printf("\x1B[34m %d \n\x1B[0m", freelist[fl_ind]);
         int fz_ind = bv_ffz(freelist[fl_ind]);
         if (fz_ind >= 0) {

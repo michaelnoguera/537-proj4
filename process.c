@@ -1,9 +1,21 @@
+#define _GNU_SOURCE 
+
 #include "process.h"
 #include "memory.h"
 #include <assert.h>
 #include <search.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+typedef struct node_t
+{
+  /* Callers expect this to be the first element in the structure - do not
+     move!  */
+  const void *key;
+  uintptr_t left_node; /* Includes whether the node is red in low-bit. */
+  uintptr_t right_node;
+} *node;
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
 
@@ -303,6 +315,50 @@ bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
     VPage* v = PageTable_get(p->pageTable, vpn);
     if (v == NULL) return false;
     return v->inMemory;
+}
+
+void VPage_freeInMem(const void *nodep, const VISIT which, 
+    __attribute__((unused))const int depth) {
+    VPage* vp;
+    switch (which) {
+    case preorder:
+        break;
+    case postorder:
+        vp = *(VPage **) nodep;
+        printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
+        if (vp->inMemory) {
+            Memory_evictPage(vp->currentPPN);
+        }
+        vp->inMemory = false;
+        break;
+    case endorder:
+        break;
+    case leaf:
+        vp = *(VPage **) nodep;
+        printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
+        if (vp->inMemory) {
+            Memory_evictPage(vp->currentPPN);
+        }
+        vp->inMemory = false;
+        break;
+    }
+}
+
+void VPage_treeFree(void* vp_node) {
+    VPage* vp = vp_node;
+    VPage_free(vp);
+}
+
+
+void Process_quit(Process* p) {
+    assert(p->pageTable != NULL);
+    PageTable* pagetable_tmp = p->pageTable;
+
+    twalk(*pagetable_tmp, VPage_freeInMem);
+    tdestroy(*pagetable_tmp, VPage_treeFree);
+    Process_free(p);
+
+    return;
 }
 
 /**

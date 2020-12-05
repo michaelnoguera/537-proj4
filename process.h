@@ -55,6 +55,8 @@ Process* Process_init(unsigned long pid, unsigned long firstline,
 
 Process* Process_peek(ProcessStatus status);
 
+void Process_quit(Process* p);
+
 bool Process_existsWithStatus(ProcessStatus status);
 
 void Process_setStatus(Process* p, ProcessStatus status);
