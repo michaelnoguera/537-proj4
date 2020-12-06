@@ -3,14 +3,21 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+// Clock doesn't need any overhead information, other than a reference
+// back to its parent VPN so that PPNs can be resolved and used to 
+// make changes to the freelist shadow array.
 struct clock_overhead {
     VPage* parent;
 };
 
-static unsigned long clock_hand;
+// index into memory (freelist), a PPN which indicates where the clock hand currently is
+static unsigned long clock_hand; 
+// size of memory in pages
 static int numPages;
+// a shadow array of memory, which stores reference bits for each page frame.
 static bool* shadowMem_Reflist;
 
+// Creates shadow array, initializes clock_hand to 0
 void Replace_initReplacementModule(int numberOfPhysicalPages) {
     clock_hand = 0;
     numPages = numberOfPhysicalPages;
@@ -19,9 +26,12 @@ void Replace_initReplacementModule(int numberOfPhysicalPages) {
     }
 }
 
-void Replace_freeReplacementModule() { return; }
+void Replace_freeReplacementModule() { 
+    free(shadowMem_Reflist);    
+}
 
-void* Replace_initOverhead(__attribute__((unused)) VPage* vpage) {
+// Need to set the parent pointer in the overhead.
+void* Replace_initOverhead(VPage* vpage) {
     struct clock_overhead* co =
       (struct clock_overhead*)malloc(sizeof(struct clock_overhead));
     co->parent = vpage;
@@ -32,6 +42,7 @@ void Replace_freeOverhead(void* o_ptr) {
     free((struct clock_overhead*)o_ptr);
 }
 
+// A page was referenced, so we turn the reference bit on.
 void Replace_notifyPageAccess(void* o_ptr) {
     // We assume the Vpage is in memory because this gets called
     // after it was just referenced.
@@ -43,6 +54,8 @@ void Replace_notifyPageAccess(void* o_ptr) {
 // unimplemented
 void Replace_notifyPageLoad(void* o_ptr) { Replace_notifyPageAccess(o_ptr); }
 
+// Core clock algorithm. Sweeps through the reference bits till it finds a 0,
+// setting the 1s to 0s on its way.
 unsigned long Replace_getPageToEvict() {
     assert(!Memory_hasFreePage());
     // unsigned long start_pos = clock_hand;

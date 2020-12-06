@@ -27,6 +27,7 @@ IntervalNode* it_initnode(size_t low, size_t high) {
     return in;
 }
 
+// Simple check to see if an integer is contained within an interval
 bool it_contains(size_t low, size_t high, size_t x) {
     return low <= x && x <= high;
 }
@@ -73,6 +74,9 @@ bool it_find_bool(IntervalNode* root, size_t x) {
     // Check current root
     if (it_contains(root->low, root->high, x)) return true; 
 
+    // If the left node exists and X is within the
+    // max range set by the left node, we check it.
+    // Otherwise it has to be in the right node.
     if (root->left != NULL && root->left->max >= x) {
         return it_find_bool(root->left, x);
     } else {
@@ -80,6 +84,7 @@ bool it_find_bool(IntervalNode* root, size_t x) {
     }
 }
 
+// Same as it_find_bool, but actually returns the pointer to the the found node.
 IntervalNode* it_find(IntervalNode* root, size_t x) {
 
     // Make sure the root is not null, and that x isn't greater than the maximum.
@@ -90,6 +95,9 @@ IntervalNode* it_find(IntervalNode* root, size_t x) {
     // Check current root
     if (it_contains(root->low, root->high, x)) return root; 
 
+    // If the left node exists and X is within the
+    // max range set by the left node, we check it.
+    // Otherwise it has to be in the right node.
     if (root->left != NULL && root->left->max >= x) {
         return it_find(root->left, x);
     } else {
@@ -109,6 +117,7 @@ void it_print(IntervalNode* root) {
 }
 
 // WIP: potentially useful for extra credit
+// (still need to be able to tell it to look for the next line of a specific VPN)
 // not particularly useful at the moment since it only tells you when a process has its next line,
 // not when a page does. checking for the VPN would require being passed a FILE* though, should probably wrap around this
 size_t it_giveNext(IntervalNode* root, size_t current) {
@@ -130,10 +139,15 @@ size_t it_giveNext(IntervalNode* root, size_t current) {
     }
 }
 
+// Getters and setters were used here instead of putting in init because often times
+// the Fpos needs to be set after init.
+
+// Setter function for file position decoration.
 void it_setFpos(IntervalNode* n, long p) {
     n->fpos_start = p;
 }
 
+// Setter function for file position decoration.
 long it_getFpos(IntervalNode* n) {
     return n->fpos_start;
 }
