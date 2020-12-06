@@ -71,9 +71,6 @@ void first_pass(FILE* trace_file) {
 
     void* search_tree = 0; // search tree to store already seen PIDs in
 
-    size_t bufsize = 0; // used for getline
-    char* line = NULL;  // current line
-
     // track fields for current process
     unsigned long pid = 0;
     unsigned long start_line_number = 1;
@@ -85,22 +82,19 @@ void first_pass(FILE* trace_file) {
     }
     unsigned long curr_line_number = 1;
 
-    // read line into temp heap-alloc'd buffer
-    // "If *lineptr is set to NULL and *n is set 0 before the call,
-    // then getline() will allocate a buffer for storing the line.
-    // This buffer should be freed by the user program even if getline()
-    // failed." See getline(3)
-    int getline_result = 0;
+    int fscanf_result = 0;
     do {
         if ((curr_fpos = ftell(trace_file)) == -1) {
                         perror("Error retrieving file position in tracefile.");
                         exit(EXIT_FAILURE);
         }
 
-        getline_result = getline(&line, &bufsize, trace_file);
-
-        unsigned long curr_pid = strtoul(line, NULL, 10); // Parse current line
-        if (curr_pid == 0 && getline_result >= 0) {
+        unsigned long curr_pid;
+        unsigned long curr_vpn;
+         // Parse current line using fscanf
+        fscanf_result = fscanf(trace_file, "%lu %lu", &curr_pid, &curr_vpn);
+        assert(curr_vpn > 0); // make sure the VPN is actually valid
+        if (curr_pid == 0 && fscanf_result >= 0) {
             fprintf(stderr, "ERROR: Invalid trace file format at line %ld",
                     curr_line_number);
             exit(EXIT_FAILURE);
@@ -109,7 +103,7 @@ void first_pass(FILE* trace_file) {
         // Was the PID found on current line different than the last? enter
         // condition for creating a new Process* struct and adding to
         // list/queue.
-        if (pid != 0 && (curr_pid != pid || getline_result < 0)) {
+        if (pid != 0 && (curr_pid != pid || fscanf_result <= 0)) {
             struct PidMap* new_pdm;       // interval tree query
             struct PidMap* search_result; // result of tsearch
             new_pdm = make_PidMap(pid); // create the search query based on PID
@@ -148,17 +142,13 @@ void first_pass(FILE* trace_file) {
                                                 // in the search tree
                 }
                 start_fpos = curr_fpos;
-                    start_line_number =
-                      curr_line_number; // reset start_line_number
+                start_line_number = curr_line_number; // reset start_line_number
             }
         }
 
-        // reset vars for getline()
-        line = NULL;
-        bufsize = 0;
         pid = curr_pid;
         curr_line_number++;
-    } while (getline_result >= 0);
+    } while (fscanf_result > 0);
 
     tdestroy(search_tree, PidMap_free); // destroy search tree
 }
