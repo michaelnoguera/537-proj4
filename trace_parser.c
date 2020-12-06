@@ -93,7 +93,6 @@ void first_pass(FILE* trace_file) {
         unsigned long curr_vpn;
          // Parse current line using fscanf
         fscanf_result = fscanf(trace_file, "%lu %lu", &curr_pid, &curr_vpn);
-        assert(curr_vpn > 0); // make sure the VPN is actually valid
         if (curr_pid == 0 && fscanf_result >= 0) {
             fprintf(stderr, "ERROR: Invalid trace file format at line %ld",
                     curr_line_number);
