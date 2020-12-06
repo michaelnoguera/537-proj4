@@ -108,7 +108,7 @@ void it_print(IntervalNode* root) {
     }
 }
 
-// todo: modify to check for VPN equal condition
+// WIP: potentially useful for extra credit
 // not particularly useful at the moment since it only tells you when a process has its next line,
 // not when a page does. checking for the VPN would require being passed a FILE* though, should probably wrap around this
 size_t it_giveNext(IntervalNode* root, size_t current) {

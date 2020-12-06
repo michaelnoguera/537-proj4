@@ -155,24 +155,6 @@ static int PageTable_add(PageTable* pt, VPage* new) {
 }
 
 /**
- * @return page if found, NULL if not
- *
-static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
-    VPage* entry_to_remove;
-
-    if ((entry_to_remove = PageTable_get(pt, vpn)) == NULL) {
-        // Entry removal failed. The node was not found in the page table.
-        return NULL;
-    } else {
-        // Entry was found. call tdelete() and remove
-        tdelete(entry_to_remove, pt, PageTable_compare);
-        VPage_free(entry_to_remove);
-        return entry_to_remove;
-    }
-}*/
-
-
-/**
  * Peek at the proc. at the head of a given status queue. NULL if none present.
  */
 Process* Process_peek(ProcessStatus status) {
@@ -196,6 +178,10 @@ bool Process_existsWithStatus(ProcessStatus status) {
 Process* Process_init(unsigned long pid, unsigned long firstline,
                       unsigned long lastline, IntervalNode* lineIntervals) {
     Process* p = malloc(sizeof(Process));
+    if (p == NULL) {
+        perror("Couldn't allocate memory for new process.");
+        exit(EXIT_FAILURE);
+    }
     p->pid = pid;
     p->firstline = firstline;
     p->currentline = firstline;

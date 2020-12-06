@@ -11,11 +11,12 @@ static unsigned long clock_hand;
 static int numPages;
 static bool* shadowMem_Reflist;
 
-//
 void Replace_initReplacementModule(int numberOfPhysicalPages) {
     clock_hand = 0;
     numPages = numberOfPhysicalPages;
-    shadowMem_Reflist = (bool*)malloc(sizeof(bool) * numPages);
+    if ((shadowMem_Reflist = (bool*)malloc(sizeof(bool) * numPages)) == NULL) {
+        perror("Cannot allocate memory for clock algorithm shadow rarray.");
+    }
 }
 
 void Replace_freeReplacementModule() { return; }
@@ -51,7 +52,4 @@ unsigned long Replace_getPageToEvict() {
         clock_hand = (clock_hand + 1) % numPages;
     }
     return (clock_hand);
-    // todo: what to do when the clock can't find any page to evict?
-    perror("Clock algorithm could not find a page to evict.");
-    return 0;
 }
