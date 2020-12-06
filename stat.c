@@ -57,3 +57,7 @@ void Stat_printStats(unsigned long time) {
     printf("TPI: %lu\n", ProgStats->tpi);
     printf("RTime: %lu\n", time);
 }
+
+unsigned long Stat_tmr_so_far() {
+    return ProgStats->tmr;
+}

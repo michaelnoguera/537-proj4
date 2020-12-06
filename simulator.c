@@ -11,9 +11,10 @@
 #include "stat.h"
 #include <assert.h>
 
+// === SIMULATION PARAMETERS ===
 enum {
-    CLOCK_TICK = 1,
-    DISK_PENALTY = 2000000,
+    CLOCK_TICK = 1 /*ns*/,
+    DISK_PENALTY = 2000000 /*ns = 2 ms*/,
 };
 
 static_assert(CLOCK_TICK > 0, "Clock tick must be greater than zero.");
@@ -22,26 +23,38 @@ static_assert(DISK_PENALTY % CLOCK_TICK == 0,
               "Disk penalty must be a multiple of clock tick, else ticks won't "
               "ever add up to a completed I/O.");
 
+// === HELPER FUNCTIONS ===
+
+/** @return true when all processes are finished */
 static inline bool Simulator_notDone() {
     return Process_existsWithStatus(RUNNABLE)
            || Process_existsWithStatus(BLOCKED);
 }
 
-static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
-    assert(tracefile != NULL && Process_peek(RUNNABLE) != NULL);
-    Process_peek(RUNNABLE)->currentPos = ftell(tracefile);
+/** ftell wrapper, returns current line on success or errors with message */
+static inline long safe_ftell(FILE* tracefile) {
+    long fpos = ftell(tracefile);
+    if (fpos == -1) {
+        perror("Error finding current line in trace file.");
+        exit(EXIT_FAILURE);
+    }
+    return fpos;
 }
 
+/** Return to the file position saved in a given process */
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
     assert(p != NULL && p->status != FINISHED);
+
     if (fseek(tracefile, p->currentPos, SEEK_SET) != 0
-        || ftell(tracefile) != p->currentPos) {
-        fprintf(stderr, "fseek to position %lu failed, ended up at %lu\n",
-                p->currentPos, ftell(tracefile));
+        || safe_ftell(tracefile) != p->currentPos) {
+        perror("Seek to position within tracefile failed.");
         exit(EXIT_FAILURE);
     }
 }
 
+/** Load the next blocked page, evicting if neccesary
+ * @details notifies replacement module of page load
+ */
 static inline void Simulator_finishCurrentDiskIO() {
     Process* p = Process_peek(BLOCKED);
     assert(p != NULL && p->status == BLOCKED);
@@ -60,34 +73,44 @@ static inline void Simulator_finishCurrentDiskIO() {
         Memory_loadPage(p->waitingOnPage, ppn);
         Replace_notifyPageLoad(p->waitingOnPage->overhead);
     }
+
     p->waitingOnPage = NULL;
 }
 
+/**
+ * Wrapper that handles special cases of status/context switches. Use only this
+ * function to perform context switches in the simulator.
+ * @param tracefile currently open file
+ * @param p process to switch
+ * @param new new status for process
+ * @param fpos
+ */
 static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
-                                                ProcessStatus new,
-                                                long fpos_hack) {
+                                                ProcessStatus new, long fpos) {
     assert(tracefile != NULL && ferror(tracefile) == 0);
     assert(p != NULL);
 
     ProcessStatus old = p->status;
-
     assert(Process_peek(old) == p && "not at head of queue");
 
     if (old == RUNNABLE) {
         assert(tracefile != NULL && Process_peek(RUNNABLE) != NULL);
-        Process_peek(RUNNABLE)->currentPos = fpos_hack;
+        Process_peek(RUNNABLE)->currentPos = fpos;
 
     } else if (old == BLOCKED) {
         assert(p->waitTime == 0
                && "Cannot resume blocked process prematurely.");
     } else if (old == FINISHED) {
-        assert(false && "ERROR: Attempted to resume already-finished process.");
+        fprintf(stderr,
+                "ERROR: Attempted to resume already-finished process.\n");
+        exit(EXIT_FAILURE);
     }
 
     if (Process_switchStatus(old, new) != p) {
         fprintf(stderr,
                 "ERROR: Corruption in process queue. Do not modify data "
                 "structures concurrently with execution.");
+        exit(EXIT_FAILURE);
     }
 
     if (new == RUNNABLE) {
@@ -98,9 +121,16 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
     } else if (new == FINISHED) {
         assert(!Process_hasLinesRemainingInFile(p)
                && "Cannot mark process as finished with lines left to run.");
+        Process_quit(p); // clean up and free memory
     }
 }
 
+// === SIMULATION ===
+
+/**
+ * Runs the simulation.
+ * @param pointer to tracefile, opened in read mode
+ */
 unsigned long Simulator_runSimulation(FILE* tracefile) {
     unsigned long time = 0; // time in nanoseconds
 
@@ -137,10 +167,9 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             continue;
         }
 
-
-        Process* old_p = p;
-        p = Process_peek(RUNNABLE);
-        if (old_p != p) {
+        // upon context switch, jump to the new file position
+        if (p != Process_peek(RUNNABLE)) {
+            p = Process_peek(RUNNABLE);
             if (p->currentPos != ftell(tracefile)) {
                 Simulator_seekSavedLine(tracefile, p);
             }
@@ -152,24 +181,18 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         assert(p != NULL);
         assert(p->currInterval != NULL);
 
-        long fpos_hack = ftell(tracefile);
+        long fpos = ftell(tracefile);
+        if (fpos == -1) {
+            perror("Error finding current line in trace file.");
+            exit(EXIT_FAILURE);
+        }
         if (fscanf(tracefile, "%lu %lu\n", &pid, &vpn) != 2) {
             perror("Error reading from trace file.");
             exit(EXIT_FAILURE);
         }
 
         if (pid != p->pid) {
-            if (p->status != RUNNABLE) {
-                fprintf(stderr, "Process escaped block queue.\n");
-            }
-            if (p->currInterval->low < p->currentline
-                && p->currInterval->high > p->currentline) {
-                fprintf(stderr, "Interval tree provided invalid location.\n");
-            }
-            for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
-                // ProcessQueue_printQueue(i);
-            }
-            assert(pid == p->pid);
+            fprintf(stderr, "ERROR: Wrong line in tracefile recieved.\n");
         }
 
         // 4. Simulate memory reference
@@ -190,7 +213,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
 
             if (Process_onLastLineInInterval(p)
                 && Process_hasIntervalsRemaining(p)) {
-                
+
                 // advance file pointer
                 Process_jumpToNextInterval(p);
                 Simulator_seekSavedLine(tracefile, p);
@@ -203,13 +226,13 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             } else {
                 // no remaining intervals, no remaining lines -> finished
                 Simulator_safelySwitchStatus(tracefile, p, FINISHED, 0);
-                Process_quit(p); // clean up and free memory
+                p = NULL;
             }
         } else {
             Stat_miss();
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
-            Simulator_safelySwitchStatus(tracefile, p, BLOCKED, fpos_hack);
+            Simulator_safelySwitchStatus(tracefile, p, BLOCKED, fpos);
         }
     }
 

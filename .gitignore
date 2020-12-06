@@ -2,3 +2,6 @@
 pfsim
 pfsim-*
 tmp*
+*.addrtrace
+*.log
+scan-build-out
