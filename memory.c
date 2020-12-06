@@ -159,8 +159,8 @@ ul64 Memory_getFreePage() {
  * @return true if there is a free page in memory
  */
 bool Memory_hasFreePage() {
-    printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
-           allocated, mem_size);
+    //printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
+    //       allocated, mem_size);
     return mem_size != allocated;
 }
 
