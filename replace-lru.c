@@ -1,3 +1,4 @@
+#include "memory.h"
 #include "replace.h"
 #include <assert.h>
 #include <stdio.h>
@@ -6,18 +7,32 @@
 
 #pragma message "replace-lru is still incomplete"
 
-
 static TAILQ_HEAD(lrq_t, lrunit) lrq = TAILQ_HEAD_INITIALIZER(lrq);
-struct lrq *headp;
+
+struct lrq_t* headp;
 struct lrunit {
     VPage* parent;
     TAILQ_ENTRY(lrunit) entries;
 };
 
-static int numPages;
+static inline bool Replace_isValid(struct lrunit* l) {
+    if (l == NULL) return false;
+    if (l->parent == NULL) return false;
+    if (l->parent->inMemory == false) return false;
+    if (l->parent->overhead != l) return false;
+    if (l->parent->pid == 0) return false;
+    return true;
+}
+
+static inline unsigned long Replace_ppnFromUnit(struct lrunit* l) {
+    return l->parent->currentPPN;
+}
+
+static int capacity = 0;
+static int pages = 0;
 
 void Replace_initReplacementModule(int numberOfPhysicalPages) {
-    numPages = numberOfPhysicalPages;
+    capacity = numberOfPhysicalPages;
     TAILQ_INIT(&lrq);
 }
 
@@ -38,34 +53,52 @@ void* Replace_initOverhead(VPage* vpage) {
         exit(EXIT_FAILURE);
     }
     overhead->parent = vpage;
-    TAILQ_INSERT_HEAD(&lrq, overhead, entries);
-    #pragma message "replace-lru does not properly initialize overhead yet"
-
+    
     return overhead;
 }
 
 void Replace_freeOverhead(void* o_ptr) {
+    assert(pages >= 0);
+    assert(pages <= capacity);
     struct lrunit* overhead = (struct lrunit*)o_ptr;
-    TAILQ_REMOVE(&lrq, overhead, entries);
-    free(overhead);
+    if (overhead->entries.tqe_next || overhead->entries.tqe_prev) {
+        TAILQ_REMOVE(&lrq, overhead, entries);
+        pages--;
+    }
+    free(o_ptr);
 }
 
 void Replace_notifyPageAccess(void* o_ptr) {
+    assert(pages >= 0);
+    assert(pages <= capacity);
     struct lrunit* overhead = (struct lrunit*)o_ptr;
+    assert(overhead->entries.tqe_next || overhead->entries.tqe_prev);
     TAILQ_REMOVE(&lrq, overhead, entries);
-    TAILQ_INSERT_HEAD(&lrq, overhead, entries);
+    TAILQ_INSERT_TAIL(&lrq, overhead, entries);
 }
 
-// unimplemented
-void Replace_notifyPageMiss(__attribute__((unused))void* o_ptr) { return; }
-
-/*void Replace_notifyPageAccess(int ppn) {
-    struct lrunit* overhead = (struct lrunit*)Memory_getVPage(ppn)->overhead;
-    TAILQ_REMOVE(&lrq, overhead, entries);
-    TAILQ_INSERT_HEAD(&lrq, overhead, entries);
-}*/
+void Replace_notifyPageLoad(void* o_ptr) {
+    assert(pages >= 0);
+    assert(pages <= capacity);
+    assert(o_ptr != NULL);
+    struct lrunit* overhead = (struct lrunit*)o_ptr;
+    TAILQ_INSERT_TAIL(&lrq, overhead, entries);
+    pages++;
+}
 
 unsigned long Replace_getPageToEvict() {
-    #pragma message "replace-lru has no eviction policy yet"
-    return 0;
+    assert(!Memory_hasFreePage());
+    assert(pages >= 0);
+    assert(pages <= capacity);
+    printf("first in queue = %lu, inMemory = %i\n",
+           TAILQ_FIRST(&lrq)->parent->vpn, TAILQ_FIRST(&lrq)->parent->inMemory);
+    // assert(TAILQ_FIRST(&lrq)->parent->inMemory);
+    struct lrunit* n1 = TAILQ_FIRST(&lrq);
+    if (!Replace_isValid(n1)) {
+        perror("Invalid entry in replacement list");
+        exit(EXIT_FAILURE);
+    }
+    TAILQ_REMOVE(&lrq, n1, entries);
+    pages--;
+    return n1->parent->currentPPN;
 }

@@ -33,7 +33,7 @@ void Replace_notifyPageAccess(void* o_ptr) {
 }
 
 // unimplemented
-void Replace_notifyPageMiss(__attribute__((unused))void* o_ptr) { return; }
+void Replace_notifyPageLoad(__attribute__((unused))void* o_ptr) { return; }
 
 unsigned long Replace_getPageToEvict() {
     assert(!Memory_hasFreePage());

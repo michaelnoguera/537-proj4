@@ -41,7 +41,7 @@ void Replace_notifyPageAccess(void* o_ptr);
  * @details Called once after every reference in simulator.c
  * @param o_ptr A void* holding the overhead struct
  */
-void Replace_notifyPageMiss(void* o_ptr);
+void Replace_notifyPageLoad(void* o_ptr);
 
 /**
  * Core "replacement algorithm" method. Uses the corresponding module's
