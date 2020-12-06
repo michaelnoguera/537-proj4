@@ -166,7 +166,6 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             exit(EXIT_FAILURE);
         }
 
-        // printf("%3lu | %3lu %3lu", p->currentline, pid, vpn);
         if (pid != p->pid) {
             if (p->status != RUNNABLE) {
                 fprintf(stderr, "Process escaped block queue.\n");
@@ -180,8 +179,6 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             }
             assert(pid == p->pid);
         }
-
-        // p->currentPos = ftell(tracefile);
 
         // 4. Simulate memory reference
         // get the virtual page-> look up in page table for this proc.

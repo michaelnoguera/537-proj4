@@ -156,7 +156,7 @@ static int PageTable_add(PageTable* pt, VPage* new) {
 
 /**
  * @return page if found, NULL if not
- */
+ *
 static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
     VPage* entry_to_remove;
 
@@ -169,7 +169,7 @@ static VPage* PageTable_remove(PageTable* pt, unsigned long vpn) {
         VPage_free(entry_to_remove);
         return entry_to_remove;
     }
-}
+}*/
 
 
 /**
@@ -328,7 +328,6 @@ void PageTable_free_destroyVPage(void* vp_node) {
 
 void Process_quit(Process* p) {
     assert(p->pageTable != NULL);
-    printf("Quitting process %d!\n", p->pid);
     PageTable* pagetable_tmp = p->pageTable;
 
     tdestroy(*pagetable_tmp, PageTable_free_destroyVPage);
