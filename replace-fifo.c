@@ -84,16 +84,7 @@ void Replace_freeOverhead(void* o_ptr) {
         pages--;
     }
 
-<<<<<<< HEAD
-void Replace_notifyPageAccess(void* o_ptr) {
-    struct fifounit* overhead = (struct fifounit*)o_ptr;
-    printf("FIFO: Adding %ld,%ld to queue\n", overhead->parent->pid, overhead->parent->vpn);
-    TAILQ_REMOVE(&fifoq, overhead, entries);
-    TAILQ_INSERT_HEAD(&fifoq, overhead, entries);
-    numAllocated++;
-=======
     free(o_ptr);
->>>>>>> 89c05d453264ceb75e77733de7ba9259bc143fbd
 }
 
 /**
@@ -108,11 +99,6 @@ void Replace_notifyPageAccess(__attribute__((unused)) void* o_ptr) {}
  * @param o_ptr pointer to overhead struct in virtual page
  */
 void Replace_notifyPageLoad(void* o_ptr) {
-<<<<<<< HEAD
-    struct fifounit* overhead = (struct fifounit*)o_ptr;
-    printf("FIFO: Removing %ld,%ld from queue\n", overhead->parent->pid, overhead->parent->vpn);
-    TAILQ_REMOVE(&fifoq, overhead, entries);
-=======
     assert(o_ptr != NULL);
     assert(pages >= 0 && pages <= capacity);
 
@@ -123,7 +109,6 @@ void Replace_notifyPageLoad(void* o_ptr) {
     TAILQ_INSERT_TAIL(&fifo_queue, overhead,
                       entries); // tail holds newest items
     pages++;
->>>>>>> 89c05d453264ceb75e77733de7ba9259bc143fbd
 }
 
 /**
@@ -132,16 +117,6 @@ void Replace_notifyPageLoad(void* o_ptr) {
  * @return PPN of page to evict
  */
 unsigned long Replace_getPageToEvict() {
-<<<<<<< HEAD
-    FIFO_printQueue();
-    struct fifounit* last = TAILQ_LAST(&fifoq, fifoq_t);
-    assert(last->parent->inMemory);
-    int ret_ppn = last->parent->currentPPN;
-    TAILQ_REMOVE(&fifoq, last, entries);
-
-    printf("FIFO: Evicting PPN %d\n", ret_ppn);
-    return ret_ppn;
-=======
     assert(pages >= 0 && pages <= capacity);
 
     // head of queue holds oldest item
@@ -153,5 +128,4 @@ unsigned long Replace_getPageToEvict() {
     pages--;
 
     return n1->parent->currentPPN;
->>>>>>> 89c05d453264ceb75e77733de7ba9259bc143fbd
 }
