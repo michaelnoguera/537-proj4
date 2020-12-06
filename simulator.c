@@ -58,7 +58,7 @@ static inline void Simulator_finishCurrentDiskIO() {
         Memory_loadPage(p->waitingOnPage, ppn);
         Replace_notifyPageLoad(p->waitingOnPage->overhead);
     } else {
-        //printf("EVICTING A PAGE !!!!!!!\n");
+        // printf("EVICTING A PAGE !!!!!!!\n");
         ppn = Replace_getPageToEvict();
         Memory_evictPage(ppn);
         Memory_loadPage(p->waitingOnPage, ppn);
@@ -112,23 +112,14 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
 unsigned long Simulator_runSimulation(FILE* tracefile) {
     unsigned long time = 0; // time in nanoseconds
 
-    // unsigned long currentline = 1;
     assert(tracefile != NULL && "tracefile can't be null");
     rewind(tracefile); // reset ptr
     Process* p = Process_peek(RUNNABLE);
-
-    // printf("%s\n"," #  | pid vpn hit/miss");
-    // printf("%s\n","---   --- --- --------");
 
     while (Simulator_notDone()) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
         Stat_default(CLOCK_TICK);
-        //printf("t=%lu\n", time);
-
-        // if (time % DISK_PENALTY == 0) {
-        //    printf("%s\n", "Here's a nice breakpoint!");
-        //}
 
         // 1. Advance disk wait counter if needed
         if (Process_existsWithStatus(BLOCKED)) {
@@ -137,11 +128,12 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
                 Simulator_finishCurrentDiskIO(); // evicts if needed
                 Simulator_safelySwitchStatus(tracefile, Process_peek(BLOCKED),
                                              RUNNABLE, 0);
+                continue;
             }
         }
 
-        // 2. If all processes are blocked, idle and wait for one to become
-        // avaliable
+        // 2. If all processes are blocked, jump to the time where one finishes
+        // waiting
         if (!Process_existsWithStatus(RUNNABLE)) {
             assert((Process_peek(BLOCKED))->waitTime != 0);
             unsigned long skip =
@@ -153,6 +145,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             continue;
         }
 
+
         Process* old_p = p;
         p = Process_peek(RUNNABLE);
         if (old_p != p) {
@@ -160,9 +153,6 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
                 Simulator_seekSavedLine(tracefile, p);
             }
         }
-
-
-        // printf("Running process %lu\n", p->pid);
 
         // 3. Find line to run next
         unsigned long pid;
@@ -204,51 +194,35 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             assert(Process_getVirtualPage(p, vpn) == v);
         }
 
-        //bool thisTickWasAHit = false;
+        // Is it a hit or a miss?
         if (Process_virtualPageInMemory(p, vpn)) {
-            //thisTickWasAHit = true;
-            // printf("\t%s\n", "hit");
             Stat_hit();
             Replace_notifyPageAccess(v->overhead);
-            
+
             if (Process_onLastLineInInterval(p)
                 && Process_hasIntervalsRemaining(p)) {
-                // printf("%s\n", "Jump to next interval...");
+                
+                // advance file pointer
                 Process_jumpToNextInterval(p);
                 Simulator_seekSavedLine(tracefile, p);
-                Process_switchStatus(RUNNABLE, RUNNABLE); // DANGER CALL
-                // defer switch to after memory access, b/c blocked takes
-                // priority
+
+                // context switch
+                Process_switchStatus(RUNNABLE, RUNNABLE); // does not check for
+                                                          // safety, but fast
             } else if (Process_hasLinesRemainingInInterval(p)) {
                 p->currentline++;
             } else {
-                // printf("Process %ld finished!\n", p->pid);
+                // no remaining intervals, no remaining lines -> finished
                 Simulator_safelySwitchStatus(tracefile, p, FINISHED, 0);
-                Process_quit(p);
-                // TODO remove pages from memory
+                Process_quit(p); // clean up and free memory
             }
         } else {
-            //if (!Process_existsWithStatus(BLOCKED)) {
-            //    printf("%s\n","Queue is empty!");
-            //}
-            //printf("\t%s\n", "miss");
+            Stat_miss();
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
-            Stat_miss();
-            // Simulator_saveRunningProcessLine(tracefile);
             Simulator_safelySwitchStatus(tracefile, p, BLOCKED, fpos_hack);
         }
-        //if (1 || !thisTickWasAHit) {
-        //    printf("PID: %lu, VPN: %lu\n", pid, vpn);
-        //    printf("TMR so far: %lu\n", Stat_tmr_so_far());
-        //    printf("Clock so far: %lu\n", time);
-        //}
     }
 
-    // one tick where everything is finished????????????
-    //time += CLOCK_TICK;
-    //Stat_default(CLOCK_TICK);
-
-    //printf("%s\n", "===DONE WITH SIMULATION===");
     return time;
 }
