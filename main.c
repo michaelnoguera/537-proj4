@@ -4,6 +4,7 @@
  * @date 11/22/2020
  * @file main.c
  * @brief parses command line arguments & coordinates main simulation loop
+ * @version FINAL
  */
 
 #define _GNU_SOURCE
@@ -22,15 +23,17 @@
 
 
 /**
- * Parses args
- * @param[in] argc
- * @param[in] argv
- * @param[out] memsize
- * @param[out] pagesize
- * @param[out] filename
+ * Parses args, validates memory size and page size
+ * @param[in] argc from main
+ * @param[in] argv from main
+ * @param[out] memsize total size of memory in bytes
+ * @param[out] pagesize size of one page in bytes
+ * @param[out] filename provided trace file name
+ * @returns values via the parameter fields labeled "out", or exits with an error if invalid input provided.
  * */
 inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
                              char** filename) {
+    // use getopt to handle input
     int opt = 0;
     while ((opt = getopt(argc, argv, "-p:m:h")) != -1) {
         switch ((char)opt) {
@@ -55,6 +58,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
                 }
                 break;
             case 'h':
+                // help message printed by '-h'
                 printf("Usage:\n");
                 printf(
                   "  ./pfsim-lru [-m real memory size] [-p page size] "
@@ -83,6 +87,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
                 exit(EXIT_FAILURE);
                 break;
             case '?':
+                // error message directs user to call '-h'
                 if (argv != NULL && argv[0] != NULL) {
                     printf("Try '%s -h' for more information.\n",
                            basename(argv[0]));
@@ -99,6 +104,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
         }
     }
 
+    // validate page size
     if (*pagesize && *pagesize % 2 != 0) {
         fprintf(stderr, "ERROR: page size must be a power of two\n");
         exit(EXIT_FAILURE);
@@ -112,6 +118,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
         *pagesize = 4096;
     }
 
+    // validate and calculate memory size
     if (*memsize < 0) {
         fprintf(stderr, "ERROR: memory size must be positive\n");
         exit(EXIT_FAILURE);
@@ -122,12 +129,14 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
     }
     *memsize *= 0x100000; // MB -> bytes
 
+    // make sure that pages fit in memory
     if (*pagesize > *memsize) {
         fprintf(stderr,
                 "ERROR: specified page size is larger than memory size\n");
         exit(EXIT_FAILURE);
     }
 
+    // filename is required
     if (*filename == NULL) {
         fprintf(stderr,
                 "ERROR: must specify valid file name on command line\n");
@@ -135,6 +144,13 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
     }
 }
 
+/**
+ * Main method, coordinates simulation
+ * @param argc # of cmdline args
+ * @param argv cmdline args
+ * @see simulator.c for main loop of simulation
+ * @return EXIT_SUCCESS on success and EXIT_FAILURE on failure
+ */
 int main(int argc, char** argv) {
     // 1. Parse command line arguments
     int memsize = 0;
@@ -145,7 +161,7 @@ int main(int argc, char** argv) {
     assert(pagesize > 0);
     assert(filename != NULL);
 
-
+    // 2. Open tracefile
     FILE* tracefile = NULL;
     tracefile = fopen(filename, "r");
     if (tracefile == NULL) {
@@ -153,7 +169,7 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    // 2. Setup
+    // 3. Initialize helper modules
     int numberOfPhysicalPages = memsize / pagesize;
     assert(numberOfPhysicalPages > 0);
     Memory_init(numberOfPhysicalPages);
@@ -161,27 +177,13 @@ int main(int argc, char** argv) {
     Stat_init();
     ProcessQueues_init();
 
-    // 3. Read "first pass", ennumerating pids and building interval tree
+    // 4. Read "first pass", ennumerating pids and building interval tree
     first_pass(tracefile);
 
-    // ProcessQueue_printQueue(RUNNABLE);
-    /*for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
-        Process* head = Process_peek(i);
-        for (int i = 0; head != NULL; i++, head = STAILQ_NEXT(head, procs)) {
-            printf(
-              "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m (%p) pid: %ld "
-              "start: "
-              "%ld current: %ld end: %ld \x1B[0m, INTERVALS: ",
-              i, (void*)head, head->pid, head->firstline, head->currentline,
-              head->lastline);
-            it_print(head->lineIntervals);
-            printf("\n");
-        }
-    }*/
-
-    // 3. RUN SIMULATION
+    // 5. Run the simulation
     unsigned long exit_time = Simulator_runSimulation(tracefile);
-    Stat_printStats(exit_time);
 
-    return 0;
+    // 6. Output results
+    Stat_printStats(exit_time);
+    return EXIT_SUCCESS;
 }
