@@ -59,7 +59,7 @@ void* Replace_initOverhead(VPage* vpage) {
     overhead->parent = vpage;
     TAILQ_INSERT_HEAD(&fifoq, overhead, entries);
 
-    return overhead;
+    return (void*)overhead;
 }
 
 void Replace_freeOverhead(void* o_ptr) {
@@ -76,7 +76,7 @@ void Replace_notifyPageAccess(void* o_ptr) {
     numAllocated++;
 }
 
-void Replace_notifyPageMiss(void* o_ptr) {
+void Replace_notifyPageLoad(void* o_ptr) {
     struct fifounit* overhead = (struct fifounit*)o_ptr;
     printf("FIFO: Removing %ld,%ld from queue\n", overhead->parent->pid, overhead->parent->vpn);
     TAILQ_REMOVE(&fifoq, overhead, entries);

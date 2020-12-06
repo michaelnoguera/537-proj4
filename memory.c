@@ -102,12 +102,12 @@ void Memory_evictPage(ul64 ppn) {
 
     // remove page from free list (mark as clear)
     if ((freelist[bv_ind(ppn)] << bv_ofs(ppn) & 2147483648) == 2147483648) {
-        freelist[bv_ind(ppn)] ^= 2147483648 >> bv_ofs(ppn); // flip to low        
-        allocated--;                                 // tick allocated counter
+        freelist[bv_ind(ppn)] ^= 2147483648 >> bv_ofs(ppn); // flip to low
+        allocated--; // tick allocated counter
+    } else {
+        perror("WARN: failsafe triggered");
     }
-    //freelist[bv_ind(ppn)] |= 2147483648 >> bv_ofs(ppn); // set high
-
-    
+    // freelist[bv_ind(ppn)] |= 2147483648 >> bv_ofs(ppn); // set high
 }
 
 /**
@@ -151,6 +151,7 @@ ul64 Memory_getFreePage() {
     perror(
       "WARN: Tried to get free page when none are avaliable. Use "
       "Memory_hasFreePage to check first.");
+    exit(EXIT_FAILURE);
     return mem_size + 1; // out-of-bounds value as sentinel
 }
 
@@ -158,8 +159,8 @@ ul64 Memory_getFreePage() {
  * @return true if there is a free page in memory
  */
 bool Memory_hasFreePage() {
-    //printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
-    //       allocated, mem_size);
+    printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
+           allocated, mem_size);
     return mem_size != allocated;
 }
 
@@ -189,14 +190,19 @@ VPage* VPage_init(ul64 pid, ul64 vpn) {
 
     v->pid = pid;
     v->vpn = vpn;
-    v->overhead = Replace_initOverhead(v);
-
     v->inMemory = false;
+
+    if (pid != 0) {
+        v->overhead = Replace_initOverhead(v);
+    } else {
+        v->overhead = NULL;
+    }
 
     return v;
 }
 
 void VPage_free(VPage* vp) {
-    Replace_freeOverhead(vp->overhead);
+    if (vp->inMemory) Memory_evictPage(vp->currentPPN);
+    if (vp->overhead != NULL) Replace_freeOverhead(vp->overhead);
     free(vp);
 }

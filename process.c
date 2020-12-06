@@ -2,6 +2,7 @@
 
 #include "process.h"
 #include "memory.h"
+#include "replace.h"
 #include <assert.h>
 #include <search.h>
 #include <stdio.h>
@@ -320,46 +321,17 @@ bool Process_virtualPageInMemory(Process* p, unsigned long vpn) {
     return v->inMemory;
 }
 
-void VPage_freeInMem(const void *nodep, const VISIT which, 
-    __attribute__((unused))const int depth) {
-    VPage* vp;
-    switch (which) {
-    case preorder:
-        break;
-    case postorder:
-        vp = *(VPage **) nodep;
-        //printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
-        if (vp->inMemory) {
-            Memory_evictPage(vp->currentPPN);
-        }
-        vp->inMemory = false;
-        break;
-    case endorder:
-        break;
-    case leaf:
-        vp = *(VPage **) nodep;
-        //printf("Freeing %ld from memory: No longer in use\n", vp->currentPPN);
-        if (vp->inMemory) {
-            Memory_evictPage(vp->currentPPN);
-        }
-        vp->inMemory = false;
-        break;
-    }
-}
-
-void VPage_treeFree(void* vp_node) {
+void PageTable_free_destroyVPage(void* vp_node) {
     VPage* vp = vp_node;
     VPage_free(vp);
 }
-
 
 void Process_quit(Process* p) {
     assert(p->pageTable != NULL);
     printf("Quitting process %d!\n", p->pid);
     PageTable* pagetable_tmp = p->pageTable;
 
-    twalk(*pagetable_tmp, VPage_freeInMem);
-    tdestroy(*pagetable_tmp, VPage_treeFree);
+    tdestroy(*pagetable_tmp, PageTable_free_destroyVPage);
     Process_free(p);
 
     return;

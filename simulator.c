@@ -56,11 +56,13 @@ static inline void Simulator_finishCurrentDiskIO() {
     if (Memory_hasFreePage()) {
         ppn = Memory_getFreePage();
         Memory_loadPage(p->waitingOnPage, ppn);
+        Replace_notifyPageLoad(p->waitingOnPage->overhead);
     } else {
-        printf("EVICTING A PAGE !!!!!!!\n");
+        //printf("EVICTING A PAGE !!!!!!!\n");
         ppn = Replace_getPageToEvict();
         Memory_evictPage(ppn);
         Memory_loadPage(p->waitingOnPage, ppn);
+        Replace_notifyPageLoad(p->waitingOnPage->overhead);
     }
     // printf("Loaded vpn %lu into ppn %lu\n", p->waitingOnPage->vpn, ppn);
     p->waitingOnPage = NULL;
@@ -122,7 +124,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
         // 0. Account for clock tick
         time += CLOCK_TICK;
         Stat_default(CLOCK_TICK);
-        // printf("t=%lu\n", time);
+        //printf("t=%lu\n", time);
 
         // if (time % DISK_PENALTY == 0) {
         //    printf("%s\n", "Here's a nice breakpoint!");
@@ -202,13 +204,12 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             assert(Process_getVirtualPage(p, vpn) == v);
         }
 
-        bool thisTickWasAHit = false;
+        //bool thisTickWasAHit = false;
         if (Process_virtualPageInMemory(p, vpn)) {
-            thisTickWasAHit = true;
+            //thisTickWasAHit = true;
             // printf("\t%s\n", "hit");
             Stat_hit();
             Replace_notifyPageAccess(v->overhead);
-            // Replace_notifyPageAccess(v->currentPPN);
             
             if (Process_onLastLineInInterval(p)
                 && Process_hasIntervalsRemaining(p)) {
@@ -227,28 +228,27 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
                 // TODO remove pages from memory
             }
         } else {
-            if (!Process_existsWithStatus(BLOCKED)) {
-                printf("%s\n","Queue is empty!");
-            }
-            // printf("\t%s\n", "miss");
+            //if (!Process_existsWithStatus(BLOCKED)) {
+            //    printf("%s\n","Queue is empty!");
+            //}
+            //printf("\t%s\n", "miss");
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
-            Replace_notifyPageMiss(v->overhead);
             Stat_miss();
             // Simulator_saveRunningProcessLine(tracefile);
             Simulator_safelySwitchStatus(tracefile, p, BLOCKED, fpos_hack);
         }
-        if (!thisTickWasAHit) {
-            printf("PID: %lu, VPN: %lu\n", pid, vpn);
-            printf("TMR so far: %lu\n", Stat_tmr_so_far());
-            printf("Clock so far: %lu\n", time);
-        }
+        //if (1 || !thisTickWasAHit) {
+        //    printf("PID: %lu, VPN: %lu\n", pid, vpn);
+        //    printf("TMR so far: %lu\n", Stat_tmr_so_far());
+        //    printf("Clock so far: %lu\n", time);
+        //}
     }
 
     // one tick where everything is finished????????????
     //time += CLOCK_TICK;
     //Stat_default(CLOCK_TICK);
 
-    printf("%s\n", "===DONE WITH SIMULATION===");
+    //printf("%s\n", "===DONE WITH SIMULATION===");
     return time;
 }
