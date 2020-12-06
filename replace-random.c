@@ -1,3 +1,11 @@
+/**
+ * CS 537 Programming Assignment 4 (Fall 2020)
+ * @file replace-random.c
+ * @brief Replacement module implementing a random replacement policy. Initially
+ * used for debugging but kept because it works
+ * @author Michael Noguera
+ */
+
 #include "replace.h"
 #include <stdlib.h>
 

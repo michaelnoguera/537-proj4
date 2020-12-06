@@ -48,14 +48,14 @@ void Stat_miss() {
 void Stat_printStats(unsigned long time) {
     float amu = ProgStats->tmu / (float)time;
     float arp = ProgStats->trp / (float)time;
-    printf("(tmu=%lu)\n", ProgStats->tmu);
+    //printf("(tmu=%lu)\n", ProgStats->tmu);
 
-    printf("%s\n","Program stats:");
-    printf("AMU: %f\n", amu/Memory_getTotalSize());
-    printf("ARP: %f\n", arp);
-    printf("TMR: %lu\n", ProgStats->tmr);
-    printf("TPI: %lu\n", ProgStats->tpi);
-    printf("RTime: %lu\n", time);
+    printf("\x1B[1m\x1B[7m%s\x1B[0m\n"," PERFORMANCE ");
+    printf("  \x1B[91mAMU:  \x1B[0m %f\n", amu/Memory_getTotalSize());
+    printf("  \x1B[33mARP:  \x1B[0m %f\n", arp);
+    printf("  \x1B[92mTMR:  \x1B[0m %lu\n", ProgStats->tmr);
+    printf("  \x1B[96mTPI:  \x1B[0m %lu\n", ProgStats->tpi);
+    printf("  \x1B[95mRTime:\x1B[0m %lu\n", time);
 }
 
 unsigned long Stat_tmr_so_far() {

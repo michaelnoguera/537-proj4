@@ -114,7 +114,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
     } else if (*pagesize == 0) {
         fprintf(
           stderr,
-          "WARN: page size (-p) not specified, defaulting to 4096 bytes\n");
+          "\x1B[2mWARN: page size (-p) not specified, defaulting to 4096 bytes\x1B[0m\n");
         *pagesize = 4096;
     }
 
@@ -124,7 +124,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
         exit(EXIT_FAILURE);
     } else if (*memsize == 0) {
         fprintf(stderr,
-                "WARN: memory size (-m) not specified, defaulting to 1 MB\n");
+                "\x1B[2mWARN: memory size (-m) not specified, defaulting to 1 MB\x1B[0m\n");
         *memsize = 1;
     }
     *memsize *= 0x100000; // MB -> bytes
@@ -160,6 +160,9 @@ int main(int argc, char** argv) {
     assert(memsize > 0);
     assert(pagesize > 0);
     assert(filename != NULL);
+    
+    int numberOfPhysicalPages = memsize / pagesize;
+    assert(numberOfPhysicalPages > 0);
 
     // 2. Open tracefile
     FILE* tracefile = NULL;
@@ -168,10 +171,14 @@ int main(int argc, char** argv) {
         fprintf(stderr, "ERROR: error opening specified trace file\n");
         exit(EXIT_FAILURE);
     }
+    
+    printf("\x1B[1m\x1B[7m%s\x1B[0m\n"," PARAMETERS ");
+    printf("  \x1B[1m%s\x1B[0m\n", filename);
+    printf("  page size: %i B\n", pagesize);
+    printf("  memory size: %i MB\n", memsize/0x100000);
+    printf("  = %i pages\n", numberOfPhysicalPages);
 
     // 3. Initialize helper modules
-    int numberOfPhysicalPages = memsize / pagesize;
-    assert(numberOfPhysicalPages > 0);
     Memory_init(numberOfPhysicalPages);
     Replace_initReplacementModule(numberOfPhysicalPages);
     Stat_init();
