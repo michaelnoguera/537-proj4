@@ -2,7 +2,7 @@
  * CS 537 Programming Assignment 4 (Fall 2020)
  * @file simulator.c
  * @brief Core module that coordinates the simulation
- * @author Michael Noguera
+ * @author Michael Noguera and Julien de Castelnau
  */
 
 #include "simulator.h"
@@ -34,9 +34,6 @@ static inline void Simulator_saveRunningProcessLine(FILE* tracefile) {
 
 static inline void Simulator_seekSavedLine(FILE* tracefile, Process* p) {
     assert(p != NULL && p->status != FINISHED);
-    // assert(p->currentPos != ftell(tracefile) && "Already at next line.");
-    // printf("--> now running pid=%lu at position=%lu\n", p->pid,
-    // p->currentPos);
     if (fseek(tracefile, p->currentPos, SEEK_SET) != 0
         || ftell(tracefile) != p->currentPos) {
         fprintf(stderr, "fseek to position %lu failed, ended up at %lu\n",
@@ -58,13 +55,11 @@ static inline void Simulator_finishCurrentDiskIO() {
         Memory_loadPage(p->waitingOnPage, ppn);
         Replace_notifyPageLoad(p->waitingOnPage->overhead);
     } else {
-        // printf("EVICTING A PAGE !!!!!!!\n");
         ppn = Replace_getPageToEvict();
         Memory_evictPage(ppn);
         Memory_loadPage(p->waitingOnPage, ppn);
         Replace_notifyPageLoad(p->waitingOnPage->overhead);
     }
-    // printf("Loaded vpn %lu into ppn %lu\n", p->waitingOnPage->vpn, ppn);
     p->waitingOnPage = NULL;
 }
 
@@ -75,9 +70,6 @@ static inline void Simulator_safelySwitchStatus(FILE* tracefile, Process* p,
     assert(p != NULL);
 
     ProcessStatus old = p->status;
-    // ProcessQueue_printQueue(RUNNABLE);
-    // ProcessQueue_printQueue(BLOCKED);
-    // ProcessQueue_printQueue(FINISHED);
 
     assert(Process_peek(old) == p && "not at head of queue");
 

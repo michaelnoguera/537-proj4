@@ -278,8 +278,6 @@ inline bool Process_hasIntervalsRemaining(const Process* p) {
  * appear again.
  */
 inline void Process_jumpToNextInterval(Process* p) {
-    assert(Process_hasIntervalsRemaining(p));
-    assert(Process_onLastLineInInterval(p));
     if (p != NULL && p->currInterval != NULL) {
         p->currInterval = p->currInterval->right;
         p->currentline = p->currInterval->low;
@@ -321,25 +319,6 @@ void Process_quit(Process* p) {
 
     return;
 }
-
-/**
- * MUST have a free space in memory before calling
- * @param p process that the page belongs to
- * @param vpn virtual page identifier
- * @return ppn where the page was inserted
- *
-unsigned long Process_loadVirtualPage(Process* p, unsigned long vpn) {
-    assert(p != NULL);
-    VPage* v = PageTable_get(p->pageTable, vpn);
-    assert(v != NULL && "Can't load null page into RAM.");
-    assert(v->inMemory == false && "Page already in RAM.");
-    assert(Memory_hasFreePage() && "Must be free space in memory to add to.");
-    unsigned long ppn = Memory_getFreePage();
-    Memory_loadPage(v, ppn);
-    v->inMemory = true;
-    v->currentPPN = ppn;
-    return ppn;
-}*/
 
 /**
  * Destructs and frees a Process.

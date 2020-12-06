@@ -1,6 +1,6 @@
-CS 537 Programming Assignment ___ (Fall 2020)
+CS 537 Programming Assignment 4 (Fall 2020)
 Michael Noguera (noguera@cs.wisc.edu) and Julien de Castelnau (de-castelnau@cs.wisc.edu)
-due ___ at ___pm
+due 12/3 at 5:30pm
 
 == BUILDING ==
 
@@ -13,12 +13,78 @@ Use "make clean" to get rid of object files and executables.
 
 == USAGE ==
 
+Use ./pfsim-ALGORITHM TRACEFILE, where TRACEFILE is a valid tracefile format with a PID
+and a VPN representing a memory reference on each line, and ALGORITHM is one of:
+- FIFO: Uses FIFO replacement policy, wherein the first pages to be referenced are the first
+		to be evicted when there is a need to pull in a new page and memory is full.
+- LRU: Uses LRU replacement policy, wherein the pages with the longest time since their
+		last references are evicted first.
+- Clock: Implements the clock algorithm, which works by keeping track of reference bits
+		for each page frame and evicting those that are still 0, whereby the only way for
+		a reference bit to become 1 is by being referenced. As the clock algorithm finds 
+		reference bits set to 0, it is also turning the 1s to 0s, requiring them to be
+		referenced again in order to stay.
+- Random: A basic reference policy which picks a literal random PPN from memory to evict.
+
+Options:
+	-m SIZE: If specified, sets a memory size of SIZE MBs. Default is 1MB if unspecified.
+	-p SIZE: If specified, sets a page size of SIZE bytes. Default is 4096 if unspecified.
 
 == PROJECT STRUCTURE ==
 
-The functionality of ___ is divided into four logical modules, which serve the 
+The functionality of pfsim is divided into seven logical modules, which serve the 
 following tasks:
 
+	- main: parses arguments and initiates program operation, mainly by calling into
+		    simulator and trace_parser, then prints stats once simulation is complete.
+
+	- trace_parser: Runs a first pass over the tracefile, collecting important info
+					the simulator will use to jump around to different locations 
+					in the tracefile. Parses the data into a runnable process queue,
+					where each process has its location in the file noted using an
+					interval tree, decorated with ftell'd file locations.
+
+	- intervaltree: Implementation of the aforementioned intervaltree with search, 
+				    insert, and print operations supported.
+
+	- memory: This module handles everything related to physical memory transactions:
+			  the allocation of an array representing memory, loading/eviction of a page
+			  and an an implementation of a shadow array freelist to go along with it
+			  (indicating which pages are free). 
+
+	- process: This module handles everything related to processes and virtual memory:
+				creation/destruction of processes, switching between process queues
+				where they are held, and an implementation for each process' page table. 
+				Provides functions for callers to easily map VPN,PID->PPN through its 
+				page table. Several different queues are stored, including one for 
+				runnable+running processes, one for blocked processes (waiting on disk I/O), 
+				and one for finished processes.
+	
+	- simulator: Orchestrates and oversees all aspects of the simulation,
+				given properly parsed process data. Handles page faults, page hits,
+				and calls into the replacement module when needed, and runs each process
+				in order. Calls into stat to update the statistics whenever certain events
+				occur (page hits, page faults, etc).
+
+	- replace: A module with one job: to be able to give a PPN (unsigned long) to evict,
+			   when memory is full. The header for this file is defined with the common 
+			   triggers that we found our algorithms needed to be updated, such as whenever 
+			   a page hit occurs, or whenever a page fault happens and the disk I/O completes. 
+			   More or less, the function Replace_getPageToEvict serves as the implementation
+			   for a given algorithm. The algorithms that implement this header file and 
+			   their details are described above.
+	
+	- stat: Handles the tracking of the following statistics: average memory usage, average
+		    runnable processes, total memory references, and total page faults. The simulator
+			keeps track of the running time, which is passed to stat when it needs to print
+			statistics. Stat defines some functions for when certain events occur, those being
+			Stat_hit and Stat_miss for when a page hit or miss happens respectively. A "nothing
+			special happened for this tick" function also exists, in the form of Stat_default, in
+			case time passed (where certain fields will still need to be updated) but nothing of 
+			interest happened. Simulator calls this function every tick, or every X number of ticks
+			when X ticks were "skipped" when all procs were blocked.
+		
+	
 ====================================================================================
 NOTES
 

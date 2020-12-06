@@ -81,9 +81,9 @@ int main(int argc, char** argv) {
     char* filename = NULL;
     FILE* tracefile = NULL;
     parseArgs(argc, argv, &memsize, &pagesize, &filename, &tracefile);
+    free(filename);
     assert(memsize > 0);
     assert(pagesize > 0);
-    assert(filename != NULL);
     assert(tracefile != NULL);
 
     // 2. Setup
@@ -97,23 +97,8 @@ int main(int argc, char** argv) {
     // 3. Read "first pass", ennumerating pids and building interval tree
     first_pass(tracefile);
 
-    // ProcessQueue_printQueue(RUNNABLE);
-    /*for (int i = 0; i < NUM_OF_PROCESS_STATUSES; i++) {
-        Process* head = Process_peek(i);
-        for (int i = 0; head != NULL; i++, head = STAILQ_NEXT(head, procs)) {
-            printf(
-              "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m (%p) pid: %ld "
-              "start: "
-              "%ld current: %ld end: %ld \x1B[0m, INTERVALS: ",
-              i, (void*)head, head->pid, head->firstline, head->currentline,
-              head->lastline);
-            it_print(head->lineIntervals);
-            printf("\n");
-        }
-    }*/
-
-      // 3. RUN SIMULATION
-      unsigned long exit_time = Simulator_runSimulation(tracefile);
+    // 4. RUN SIMULATION
+    unsigned long exit_time = Simulator_runSimulation(tracefile);
     Stat_printStats(exit_time);
 
     return 0;

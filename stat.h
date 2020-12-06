@@ -5,8 +5,6 @@
  * @author Julien de Castelnau and Michael Noguera
  */
 
-// 
-
 // The tmu and trp fields get converted into the correct amu and arp fields at the
 // point of the program exit, where they are divided by the total time.
 struct stat_t {
@@ -30,5 +28,3 @@ void Stat_miss();
 
 // Print the stats out directly, given an end time for the program.
 void Stat_printStats(unsigned long time);
-
-unsigned long Stat_tmr_so_far();
