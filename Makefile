@@ -4,7 +4,8 @@ DEBUG_FLAGS= -g -O0 -Wall -Wextra -pedantic -std=gnu11
 PROD_FLAGS=-Wall -Wextra -pedantic -std=gnu11 -DNDEBUG
 
 SCAN_BUILD_DIR=scan-build-out
-COMMON_MODULES=main.o simulator.o trace_parser.o intervaltree.o process.o memory.o stat.o
+COMMON_MODULES=main.o simulator.o trace_parser.o intervaltree.o process.o \
+ memory.o stat.o
 
 .PHONY:clean test all scan-build scan-view
 
