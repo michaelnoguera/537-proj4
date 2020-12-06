@@ -15,9 +15,9 @@
 #include "process.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <search.h>
 #include <stdio.h>
-
 
 // Maps a pid to its owner process struct, for tsearch purposes
 struct PidMap {
@@ -85,8 +85,8 @@ void first_pass(FILE* trace_file) {
     int fscanf_result = 0;
     do {
         if ((curr_fpos = ftell(trace_file)) == -1) {
-                        perror("Error retrieving file position in tracefile.");
-                        exit(EXIT_FAILURE);
+            perror("Error retrieving file position in tracefile.");
+            exit(EXIT_FAILURE);
         }
 
         unsigned long curr_pid;
@@ -117,8 +117,8 @@ void first_pass(FILE* trace_file) {
                 struct PidMap* existing = *(struct PidMap**)search_result;
                 if (existing != new_pdm) {
                     // An existing result was found.
-                    // Merge intervals in the current occurrence and the existing
-                    // occurrence, using it_insert().
+                    // Merge intervals in the current occurrence and the
+                    // existing occurrence, using it_insert().
                     PidMap_free(new_pdm);
 
                     assert(existing->owner != NULL);
@@ -126,17 +126,19 @@ void first_pass(FILE* trace_file) {
                       (existing->owner->lastline < curr_line_number - 1)
                         ? curr_line_number - 1
                         : existing->owner->lastline;
-                    
-                    IntervalNode* new_IntervalNode = it_initnode(start_line_number, curr_line_number - 1);
+
+                    IntervalNode* new_IntervalNode =
+                      it_initnode(start_line_number, curr_line_number - 1);
                     it_setFpos(new_IntervalNode, start_fpos);
                     it_insert(existing->owner->lineIntervals, new_IntervalNode);
                 } else {
                     // no process existed, create one
-                    IntervalNode* new_IntervalNode = it_initnode(start_line_number, curr_line_number - 1);
+                    IntervalNode* new_IntervalNode =
+                      it_initnode(start_line_number, curr_line_number - 1);
                     it_setFpos(new_IntervalNode, start_fpos);
-                    Process* curr_proc = Process_init(
-                      pid, start_line_number, curr_line_number - 1,
-                      new_IntervalNode);
+                    Process* curr_proc =
+                      Process_init(pid, start_line_number, curr_line_number - 1,
+                                   new_IntervalNode);
 
                     new_pdm->owner = curr_proc; // update the owner of the entry
                                                 // in the search tree

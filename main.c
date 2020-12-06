@@ -4,7 +4,10 @@
  * @date 11/22/2020
  * @file main.c
  * @brief parses command line arguments & coordinates main simulation loop
+ * @version FINAL
  */
+
+#define _GNU_SOURCE
 
 #include "intervaltree.h"
 #include "memory.h"
@@ -14,24 +17,85 @@
 #include "stat.h"
 #include "trace_parser.h"
 
+#include <errno.h>
 #include <getopt.h>
+#include <string.h>
 
-/** Parses args */
+
+/**
+ * Parses args, validates memory size and page size
+ * @param[in] argc from main
+ * @param[in] argv from main
+ * @param[out] memsize total size of memory in bytes
+ * @param[out] pagesize size of one page in bytes
+ * @param[out] filename provided trace file name
+ * @returns values via the parameter fields labeled "out", or exits with an error if invalid input provided.
+ * */
 inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
-                             char** filename, FILE** tracefile) {
+                             char** filename) {
+    // use getopt to handle input
     int opt = 0;
-    while ((opt = getopt(argc, argv, "-p:m:")) != -1) {
+    while ((opt = getopt(argc, argv, "-p:m:h")) != -1) {
         switch ((char)opt) {
             case 'm':
                 assert(optarg != NULL);
+                errno = 0;
                 *memsize = (int)strtol(optarg, NULL, 10);
+                if (errno != 0) {
+                    fprintf(stderr,
+                            "Error parsing -m, must be a valid integer.\n");
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case 'p':
                 assert(optarg != NULL);
+                errno = 0;
                 *pagesize = (int)strtol(optarg, NULL, 10);
+                if (errno != 0) {
+                    fprintf(stderr,
+                            "Error parsing -p, must be a valid integer.\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            case 'h':
+                // help message printed by '-h'
+                printf("Usage:\n");
+                printf(
+                  "  ./pfsim-lru [-m real memory size] [-p page size] "
+                  "<tracefile>\n");
+                printf(
+                  "  ./pfsim-fifo [-m real memory size] [-p page size] "
+                  "<tracefile>\n");
+                printf(
+                  "  ./pfsim-clock [-m real memory size] [-p page size] "
+                  "<tracefile>\n");
+                printf(
+                  "  ./pfsim-random [-m real memory size] [-p page size] "
+                  "<tracefile>\n");
+                printf("\nOptions:\n");
+                printf("  -h\t");
+                printf("Prints this message.\n");
+                printf("  -m\t");
+                printf(
+                  "Amount of physical memory avaliable, in megabytes. "
+                  "Defaults to 1 MB.\n");
+                printf("  -p\t");
+                printf(
+                  "Page size as a number of bytes, must be a power of two. "
+                  "Defaults to 4096 bytes.\n");
+
+                exit(EXIT_FAILURE);
                 break;
             case '?':
-                fprintf(stderr, "ERROR: error parsing command line args\n");
+                // error message directs user to call '-h'
+                if (argv != NULL && argv[0] != NULL) {
+                    printf("Try '%s -h' for more information.\n",
+                           basename(argv[0]));
+                } else {
+                    fprintf(stderr, "Could not recognize executable name.");
+                    printf("Specify '-h' for more information.\n");
+                }
+
                 exit(EXIT_FAILURE);
                 break;
             default:
@@ -40,6 +104,7 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
         }
     }
 
+    // validate page size
     if (*pagesize && *pagesize % 2 != 0) {
         fprintf(stderr, "ERROR: page size must be a power of two\n");
         exit(EXIT_FAILURE);
@@ -47,46 +112,64 @@ inline static void parseArgs(int argc, char** argv, int* memsize, int* pagesize,
         fprintf(stderr, "ERROR: page size must be positive\n");
         exit(EXIT_FAILURE);
     } else if (*pagesize == 0) {
-        fprintf(stderr, "WARN: page size not specified, defaulting to 4096B\n");
+        fprintf(
+          stderr,
+          "WARN: page size (-p) not specified, defaulting to 4096 bytes\n");
         *pagesize = 4096;
     }
 
+    // validate and calculate memory size
     if (*memsize < 0) {
         fprintf(stderr, "ERROR: memory size must be positive\n");
         exit(EXIT_FAILURE);
     } else if (*memsize == 0) {
         fprintf(stderr,
-                "WARN: memory size not specified, defaulting to 1 MB\n");
+                "WARN: memory size (-m) not specified, defaulting to 1 MB\n");
         *memsize = 1;
     }
-    *memsize *= 0x100000; // measured in MB
+    *memsize *= 0x100000; // MB -> bytes
 
+    // make sure that pages fit in memory
+    if (*pagesize > *memsize) {
+        fprintf(stderr,
+                "ERROR: specified page size is larger than memory size\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // filename is required
     if (*filename == NULL) {
         fprintf(stderr,
                 "ERROR: must specify valid file name on command line\n");
         exit(EXIT_FAILURE);
-    } else {
-        *tracefile = fopen(*filename, "r");
-        if (*tracefile == NULL) {
-            fprintf(stderr, "ERROR: error opening specified trace file\n");
-            exit(EXIT_FAILURE);
-        }
     }
 }
 
+/**
+ * Main method, coordinates simulation
+ * @param argc # of cmdline args
+ * @param argv cmdline args
+ * @see simulator.c for main loop of simulation
+ * @return EXIT_SUCCESS on success and EXIT_FAILURE on failure
+ */
 int main(int argc, char** argv) {
-    // 1. Parse args and open trace file
+    // 1. Parse command line arguments
     int memsize = 0;
     int pagesize = 0;
     char* filename = NULL;
-    FILE* tracefile = NULL;
-    parseArgs(argc, argv, &memsize, &pagesize, &filename, &tracefile);
-    free(filename);
+    parseArgs(argc, argv, &memsize, &pagesize, &filename);
     assert(memsize > 0);
     assert(pagesize > 0);
-    assert(tracefile != NULL);
+    assert(filename != NULL);
 
-    // 2. Setup
+    // 2. Open tracefile
+    FILE* tracefile = NULL;
+    tracefile = fopen(filename, "r");
+    if (tracefile == NULL) {
+        fprintf(stderr, "ERROR: error opening specified trace file\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // 3. Initialize helper modules
     int numberOfPhysicalPages = memsize / pagesize;
     assert(numberOfPhysicalPages > 0);
     Memory_init(numberOfPhysicalPages);
@@ -94,12 +177,13 @@ int main(int argc, char** argv) {
     Stat_init();
     ProcessQueues_init();
 
-    // 3. Read "first pass", ennumerating pids and building interval tree
+    // 4. Read "first pass", ennumerating pids and building interval tree
     first_pass(tracefile);
 
-    // 4. RUN SIMULATION
+    // 5. Run the simulation
     unsigned long exit_time = Simulator_runSimulation(tracefile);
-    Stat_printStats(exit_time);
 
-    return 0;
+    // 6. Output results
+    Stat_printStats(exit_time);
+    return EXIT_SUCCESS;
 }

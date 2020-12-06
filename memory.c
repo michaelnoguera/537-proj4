@@ -161,7 +161,7 @@ ul64 Memory_getFreePage() {
 bool Memory_hasFreePage() {
     //printf("\x1B[35m allocated pages: %lu \n total pages: %lu \n\x1B[0m",
     //       allocated, mem_size);
-    return mem_size != allocated;
+    return mem_size > allocated;
 }
 
 /**

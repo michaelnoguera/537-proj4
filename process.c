@@ -1,22 +1,21 @@
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 
 #include "process.h"
 #include "memory.h"
 #include "replace.h"
 #include <assert.h>
 #include <search.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
-typedef struct node_t
-{
-  /* Callers expect this to be the first element in the structure - do not
-     move!  */
-  const void *key;
-  uintptr_t left_node; /* Includes whether the node is red in low-bit. */
-  uintptr_t right_node;
-} *node;
+typedef struct node_t {
+    /* Callers expect this to be the first element in the structure - do not
+       move!  */
+    const void* key;
+    uintptr_t left_node; /* Includes whether the node is red in low-bit. */
+    uintptr_t right_node;
+} * node;
 
 static STAILQ_HEAD(processQueue_t, process_t) pq[NUM_OF_PROCESS_STATUSES];
 
@@ -35,7 +34,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
         STAILQ_INSERT_HEAD(q, p, procs);
         return;
     }
-    
+
     Process* prev = NULL;
     Process* curr = NULL;
 
@@ -57,7 +56,7 @@ static void ProcessQueue_enqueuePriority(Process* p, struct processQueue_t* q) {
 static void ProcessQueue_enqueue(Process* p, struct processQueue_t* q) {
     if (q == &pq[RUNNABLE]) {
         ProcessQueue_enqueuePriority(p, q);
-        
+
     } else {
         STAILQ_INSERT_TAIL(q, p, procs);
     }
@@ -316,6 +315,7 @@ void Process_quit(Process* p) {
 
     tdestroy(*pagetable_tmp, PageTable_free_destroyVPage);
     Process_free(p);
+    p = NULL;
 
     return;
 }
