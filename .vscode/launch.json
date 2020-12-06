@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/pfsim-fifo",
-            "args": ["4000.addrtrace"],
+            "args": ["bigmix.addrtrace"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

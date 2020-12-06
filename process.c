@@ -355,6 +355,7 @@ void VPage_treeFree(void* vp_node) {
 
 void Process_quit(Process* p) {
     assert(p->pageTable != NULL);
+    printf("Quitting process %d!\n", p->pid);
     PageTable* pagetable_tmp = p->pageTable;
 
     twalk(*pagetable_tmp, VPage_freeInMem);

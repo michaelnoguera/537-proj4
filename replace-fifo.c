@@ -32,6 +32,24 @@ void Replace_freeReplacementModule() {
     }
 }
 
+void FIFO_printQueue() {
+    struct fifounit* head = TAILQ_FIRST(&fifoq);
+     if (TAILQ_EMPTY(&fifoq)) {
+        printf("Empty Queue \n");
+        return;
+    }
+    if (head == NULL) {
+        perror("WARN: Queue has null head, but is not empty?");
+        return;
+    }
+    for (int i = 0; head != NULL; i++, head = TAILQ_NEXT(head, entries)) {
+        printf(
+          "\t\x1B[2m->\x1B[0m\x1B[33m%3d\x1B[0m\x1B[1m %ld %ld \x1B[0m", i,
+          head->parent->pid,head->parent->vpn);
+        printf("\n");
+    }
+}
+
 void* Replace_initOverhead(VPage* vpage) {
     struct fifounit* overhead = malloc(sizeof(struct fifounit));
     if (overhead == NULL) {
@@ -52,6 +70,7 @@ void Replace_freeOverhead(void* o_ptr) {
 
 void Replace_notifyPageAccess(void* o_ptr) {
     struct fifounit* overhead = (struct fifounit*)o_ptr;
+    printf("FIFO: Adding %ld,%ld to queue\n", overhead->parent->pid, overhead->parent->vpn);
     TAILQ_REMOVE(&fifoq, overhead, entries);
     TAILQ_INSERT_HEAD(&fifoq, overhead, entries);
     numAllocated++;
@@ -59,16 +78,17 @@ void Replace_notifyPageAccess(void* o_ptr) {
 
 void Replace_notifyPageMiss(void* o_ptr) {
     struct fifounit* overhead = (struct fifounit*)o_ptr;
+    printf("FIFO: Removing %ld,%ld from queue\n", overhead->parent->pid, overhead->parent->vpn);
     TAILQ_REMOVE(&fifoq, overhead, entries);
 }
 
 unsigned long Replace_getPageToEvict() {
-    int ret_ppn = 0;
-    if(numAllocated == numPages) {
-        struct fifounit* last = TAILQ_LAST(&fifoq, fifoq_t);
-        assert(last->parent->inMemory);
-        int ret_ppn = last->parent->currentPPN;
-        TAILQ_REMOVE(&fifoq, last, entries);
-    }
+    FIFO_printQueue();
+    struct fifounit* last = TAILQ_LAST(&fifoq, fifoq_t);
+    assert(last->parent->inMemory);
+    int ret_ppn = last->parent->currentPPN;
+    TAILQ_REMOVE(&fifoq, last, entries);
+
+    printf("FIFO: Evicting PPN %d\n", ret_ppn);
     return ret_ppn;
 }

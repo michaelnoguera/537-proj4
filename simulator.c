@@ -233,7 +233,7 @@ unsigned long Simulator_runSimulation(FILE* tracefile) {
             // printf("\t%s\n", "miss");
             p->waitTime = DISK_PENALTY;
             p->waitingOnPage = v;
-            Replace_notifyPageAccess(v->overhead);
+            Replace_notifyPageMiss(v->overhead);
             Stat_miss();
             // Simulator_saveRunningProcessLine(tracefile);
             Simulator_safelySwitchStatus(tracefile, p, BLOCKED, fpos_hack);
